@@ -239,7 +239,14 @@
       linear-gradient(160deg,var(--stagedark-2),var(--stagedark) 65%);
     background-size:cover; background-position:center;
     display:flex; align-items:center; justify-content:center;
-    transition:background-image .25s ease;
+    transition:background-image .25s ease, filter .45s ease, transform .45s ease;
+    filter:none;
+    transform:scale(1);
+  }
+  /* camera "focus pull" — background dims/softens while a character is speaking, sharpens back for narration */
+  #bgLayer.cam-focus{
+    filter:brightness(.68) saturate(.85) blur(3px);
+    transform:scale(1.06);
   }
   #bgLayer .placeholder-txt{
     color:rgba(255,255,255,.45); font-size:1.05em; font-weight:600; letter-spacing:.05em;
@@ -271,7 +278,7 @@
 
   /* ---------- comic/scrapbook bubble ---------- */
   #bubbleWrap{
-    position:absolute; top:4.5em; left:1.1em; right:1.1em;
+    position:absolute; top:25%; left:1.1em; right:1.1em;
     z-index:10;
     display:flex; flex-direction:column; align-items:flex-start;
     opacity:0; transform:translateY(-8px);
@@ -299,6 +306,8 @@
     font-family:'Baloo 2', sans-serif; font-weight:500; font-size:1.1em; line-height:1.38;
     box-shadow:0 6px 0 rgba(90,55,30,.14), 0 10px 26px rgba(90,55,30,.18);
     min-height:1.5em;
+    min-width:4.5em;
+    max-width:100%;
   }
   #bubble::after{
     content:"";
@@ -307,9 +316,10 @@
     transform:rotate(45deg);
     transition:left .3s ease, right .3s ease;
   }
-  #bubbleWrap.tail-left #bubble::after{ left:2em; right:auto; }
+  /* percentage-based so the tail always lands inside the bubble, even on short lines like "..." */
+  #bubbleWrap.tail-left #bubble::after{ left:20%; right:auto; }
   #bubbleWrap.tail-center #bubble::after{ left:50%; margin-left:-11px; right:auto; }
-  #bubbleWrap.tail-right #bubble::after{ right:2em; left:auto; }
+  #bubbleWrap.tail-right #bubble::after{ right:20%; left:auto; }
 
   .bubble-deco{
     position:absolute; top:-.5em; right:.6em; font-size:1.3em; color:var(--coral);
@@ -924,6 +934,7 @@
     if(index >= timeline.length){
       cursor = timeline.length-1;
       endSlate.classList.add("visible");
+      document.getElementById("bgLayer").classList.remove("cam-focus");
       updateProgress();
       await updateSpriteVisuals();
       return;
@@ -945,14 +956,17 @@
     if(!line) return;
 
     bubbleWrap.classList.remove("tail-left","tail-center","tail-right","narration");
+    const bgLayerEl = document.getElementById("bgLayer");
     if(line.type==="dialogue"){
       const c = state.characters[line.speaker] || {color:"#E2694F", position:"center"};
       nameTag.textContent = line.speaker;
       nameTag.style.background = c.color;
       bubbleWrap.classList.add("tail-"+c.position);
+      bgLayerEl.classList.add("cam-focus");
     } else {
       bubbleWrap.classList.add("narration");
       nameTag.textContent = "";
+      bgLayerEl.classList.remove("cam-focus");
     }
     bubbleWrap.classList.add("visible");
 
