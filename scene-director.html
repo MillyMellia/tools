@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scene Director — Visual Novel Clip Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Baloo+2:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* ---- dashboard shell (editor chrome) ---- */
+    --peach:#FBE8D4;
+    --peach-2:#F4D9BA;
+    --coral:#E2694F;
+    --coral-dark:#C6523A;
+    --sage:#8FAE8B;
+    --sage-dark:#6D9469;
+    --card:#FFFCF6;
+    --card-line:#EEDCC0;
+    --ink:#3E2C22;
+    --ink-soft:#93816F;
+    --rec:#D8483A;
+
+    /* ---- scrapbook stage (in-scene bubble) ---- */
+    --paper:#FBF2E1;
+    --paper-edge:#DDC59B;
+    --tagred:#A6402E;
+    --tagred-2:#8B3327;
+    --stagedark:#1B2420;
+    --stagedark-2:#242E29;
+
+    --radius:18px;
+    font-size:16px;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--peach);
+    color:var(--ink);
+    font-family:'Quicksand', sans-serif;
+    overflow:hidden;
+  }
+  #app{
+    display:flex;
+    flex-direction:column;
+    height:100vh;
+  }
+
+  /* ---------- HEADER (coral rail, dashboard-style) ---------- */
+  header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:.85em 1.4em;
+    background:linear-gradient(135deg,var(--coral),var(--coral-dark));
+    flex:0 0 auto;
+    box-shadow:0 3px 0 rgba(0,0,0,.08);
+  }
+  .brand{ display:flex; align-items:center; gap:.6em; }
+  .brand .dot{
+    width:11px;height:11px;border-radius:50%;
+    background:#fff;
+    box-shadow:0 0 8px rgba(255,255,255,.8);
+    animation:pulse 2s infinite;
+  }
+  @keyframes pulse{ 0%,100%{opacity:1} 50%{opacity:.35} }
+  .brand h1{
+    font-size:1.05em; margin:0; font-weight:700; letter-spacing:.01em; color:#fff;
+    font-family:'Baloo 2',sans-serif;
+  }
+  .brand span{ color:rgba(255,255,255,.8); font-weight:500; font-size:.83em; }
+  header .actions{ display:flex; gap:.5em; }
+
+  button{
+    font-family:inherit;
+    cursor:pointer;
+    color:var(--ink);
+    background:var(--card);
+    border:1.5px solid var(--card-line);
+    border-radius:999px;
+    padding:.5em 1em;
+    font-size:.85em;
+    font-weight:700;
+    display:inline-flex;
+    align-items:center;
+    gap:.4em;
+    transition:.15s;
+  }
+  button:hover{ border-color:var(--coral); color:var(--coral-dark); transform:translateY(-1px); }
+  button.primary{ background:var(--coral); border-color:var(--coral); color:#fff; }
+  button.primary:hover{ background:var(--coral-dark); border-color:var(--coral-dark); color:#fff; }
+  button.ghost{ background:rgba(255,255,255,.15); border-color:rgba(255,255,255,.4); color:#fff; }
+  button.ghost:hover{ background:rgba(255,255,255,.28); color:#fff; border-color:#fff; }
+  button:active{ transform:scale(.97); }
+  button.icon-btn{ padding:0; border-radius:9px; }
+
+  input[type=text], input[type=number], textarea, select{
+    font-family:inherit;
+    background:#fff;
+    border:1.5px solid var(--card-line);
+    color:var(--ink);
+    border-radius:12px;
+    padding:.5em .7em;
+    font-size:.85em;
+    width:100%;
+  }
+  input:focus, textarea:focus, select:focus{ outline:none; border-color:var(--coral); box-shadow:0 0 0 3px rgba(226,105,79,.15); }
+  label{ font-size:.72em; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.06em; font-weight:700; display:block; margin-bottom:.4em; }
+
+  /* ---------- WORKSPACE ---------- */
+  .workspace{ display:flex; flex:1 1 auto; min-height:0; }
+
+  aside{
+    width:350px;
+    flex:0 0 350px;
+    background:var(--peach-2);
+    overflow-y:auto;
+    padding:1em;
+    border-right:1px solid var(--card-line);
+  }
+  aside::-webkit-scrollbar{ width:8px; }
+  aside::-webkit-scrollbar-thumb{ background:var(--paper-edge); border-radius:8px; }
+
+  .section{
+    background:var(--card);
+    border:1px solid var(--card-line);
+    border-radius:20px;
+    padding:1.1em;
+    margin-bottom:1em;
+    box-shadow:0 4px 14px rgba(180,120,70,.08);
+  }
+  .section h2{
+    font-size:.8em; text-transform:uppercase; letter-spacing:.06em;
+    margin:0 0 .8em 0; color:var(--ink-soft); font-weight:700; display:flex; align-items:center; justify-content:space-between;
+  }
+  .section h2 .count{
+    background:var(--peach); border:1px solid var(--card-line); border-radius:20px; padding:.1em .65em; font-size:.9em; color:var(--coral-dark); font-weight:700;
+  }
+
+  .char-row{
+    display:flex; align-items:flex-start; gap:.65em;
+    padding:.6em; border-radius:16px; background:var(--peach); border:1px solid var(--card-line);
+    margin-bottom:.6em;
+  }
+  .thumb{
+    width:44px;height:44px;border-radius:50%;flex:0 0 44px;
+    background-size:cover; background-position:center top;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:.95em; color:#fff; font-family:'Baloo 2',sans-serif;
+    border:2.5px solid #fff;
+    box-shadow:0 0 0 2px var(--coral);
+    cursor:pointer;
+  }
+  .char-main{ flex:1; min-width:0; }
+  .char-meta .name{ font-weight:700; font-size:.9em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-family:'Baloo 2',sans-serif; }
+  .char-meta .sub{ display:flex; gap:.4em; margin-top:.4em; }
+  .char-meta select{ padding:.3em .4em; font-size:.72em; border-radius:9px; }
+  .colorpick{ width:28px; height:28px; border-radius:9px; border:1.5px solid var(--card-line); padding:0; background:none; cursor:pointer; }
+  .icon-btn{ width:26px;height:26px; padding:0; border-radius:8px; flex:0 0 26px; font-size:.8em; }
+  .file-hidden{ display:none; }
+
+  .expr-row{ display:flex; flex-wrap:wrap; gap:.4em; margin-top:.55em; }
+  .expr-chip{
+    display:flex; align-items:center; gap:.35em;
+    background:#fff; border:1.5px solid var(--card-line); border-radius:999px;
+    padding:.15em .55em .15em .15em; font-size:.68em; font-weight:700; color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .expr-chip:hover{ border-color:var(--coral); }
+  .expr-chip .mini{
+    width:18px;height:18px;border-radius:50%;background-size:cover;background-position:center;
+    background-color:var(--peach-2); flex:0 0 18px;
+    display:flex;align-items:center;justify-content:center; font-size:.6em; color:#fff; font-weight:800;
+  }
+  .expr-chip.add{ background:var(--peach); color:var(--coral-dark); padding:.3em .7em; }
+  .expr-chip .rm{ margin-left:.15em; color:var(--ink-soft); font-weight:800; }
+  .expr-chip .rm:hover{ color:var(--rec); }
+
+  .bg-row{
+    display:flex; align-items:center; gap:.6em; padding:.5em; border-radius:14px;
+    background:var(--peach); border:1.5px solid var(--card-line); margin-bottom:.5em; cursor:pointer;
+  }
+  .bg-row.active{ border-color:var(--sage-dark); box-shadow:0 0 0 1px var(--sage-dark) inset; background:#EFF4EC; }
+  .bg-thumb{ width:54px; height:34px; border-radius:9px; background-size:cover; background-position:center; flex:0 0 54px; border:1px solid var(--card-line); }
+  .bg-row .name{ flex:1; font-size:.82em; font-weight:700; }
+
+  textarea#scriptInput{ height:220px; resize:vertical; font-family:'JetBrains Mono', monospace; font-size:.78em; line-height:1.55; }
+  .hint{ font-size:.72em; color:var(--ink-soft); margin-top:.6em; line-height:1.55; }
+  .hint code{ background:var(--peach); padding:.1em .35em; border-radius:6px; color:var(--coral-dark); font-weight:700; }
+
+  .row2{ display:grid; grid-template-columns:1fr 1fr; gap:.6em; }
+  .field{ margin-bottom:.8em; }
+  .field:last-child{ margin-bottom:0; }
+  .range-val{ float:right; color:var(--ink); font-weight:800; text-transform:none; letter-spacing:0; }
+
+  /* ---------- STAGE AREA ---------- */
+  main.stage-wrap{
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:1.2em; min-width:0; position:relative; gap:1em;
+    background:radial-gradient(circle at 50% 0%, var(--peach-2) 0%, var(--peach) 65%);
+  }
+
+  .viewfinder{
+    position:relative;
+    height:100%;
+    max-height:100%;
+    aspect-ratio:9/16;
+    display:flex;
+  }
+  .corner{
+    position:absolute; width:26px; height:26px; border:3px solid var(--coral); pointer-events:none; z-index:5;
+    filter:drop-shadow(0 0 5px rgba(226,105,79,.4));
+  }
+  .corner.tl{ top:-10px; left:-10px; border-right:none; border-bottom:none; border-top-left-radius:8px;}
+  .corner.tr{ top:-10px; right:-10px; border-left:none; border-bottom:none; border-top-right-radius:8px;}
+  .corner.bl{ bottom:-10px; left:-10px; border-right:none; border-top:none; border-bottom-left-radius:8px;}
+  .corner.br{ bottom:-10px; right:-10px; border-left:none; border-top:none; border-bottom-right-radius:8px;}
+
+  #stage{
+    position:relative;
+    width:100%; height:100%;
+    background:#000;
+    border-radius:8px;
+    overflow:hidden;
+    box-shadow:0 20px 60px rgba(90,55,30,.35);
+  }
+  #bgLayer{
+    position:absolute; inset:0;
+    background:
+      radial-gradient(1.5px 1.5px at 12% 18%, rgba(255,255,255,.55) 50%, transparent 52%),
+      radial-gradient(1.5px 1.5px at 30% 8%, rgba(255,255,255,.4) 50%, transparent 52%),
+      radial-gradient(1.5px 1.5px at 78% 14%, rgba(255,255,255,.5) 50%, transparent 52%),
+      radial-gradient(1.5px 1.5px at 60% 30%, rgba(255,255,255,.35) 50%, transparent 52%),
+      radial-gradient(1.5px 1.5px at 90% 45%, rgba(255,255,255,.4) 50%, transparent 52%),
+      radial-gradient(1.5px 1.5px at 20% 60%, rgba(255,255,255,.3) 50%, transparent 52%),
+      radial-gradient(1.5px 1.5px at 45% 75%, rgba(255,255,255,.35) 50%, transparent 52%),
+      radial-gradient(1.5px 1.5px at 70% 85%, rgba(255,255,255,.3) 50%, transparent 52%),
+      linear-gradient(160deg,var(--stagedark-2),var(--stagedark) 65%);
+    background-size:cover; background-position:center;
+    display:flex; align-items:center; justify-content:center;
+    transition:background-image .25s ease;
+  }
+  #bgLayer .placeholder-txt{
+    color:rgba(255,255,255,.45); font-size:1.05em; font-weight:600; letter-spacing:.05em;
+    text-align:center; padding:1em; font-family:'Baloo 2',sans-serif; font-style:italic;
+  }
+  #spriteLayer{ position:absolute; inset:0; }
+  .sprite{
+    position:absolute; bottom:0; height:62%;
+    max-width:78%;
+    background-size:contain; background-repeat:no-repeat; background-position:bottom center;
+    filter:brightness(.55) saturate(.75);
+    transform:scale(.94);
+    transition:filter .35s ease, transform .35s ease, opacity .35s ease, left .35s ease, right .35s ease, background-image .15s ease;
+    opacity:0;
+    display:flex; align-items:flex-end; justify-content:center;
+  }
+  .sprite.shown{ opacity:1; }
+  .sprite.speaking{ filter:brightness(1) saturate(1); transform:scale(1); }
+  .sprite .initials{
+    font-family:'Baloo 2',sans-serif; font-weight:800; color:#fff; font-size:2.6em;
+    width:46%; aspect-ratio:1/1; border-radius:24px; display:flex; align-items:center; justify-content:center;
+    margin-bottom:2%;
+  }
+  .sprite.has-image .initials{ display:none; }
+  .sprite.pos-left{ left:4%; }
+  .sprite.pos-center{ left:50%; transform:translateX(-50%) scale(.94); }
+  .sprite.pos-center.speaking{ transform:translateX(-50%) scale(1); }
+  .sprite.pos-right{ right:4%; }
+
+  /* ---------- comic/scrapbook bubble ---------- */
+  #bubbleWrap{
+    position:absolute; top:1.5em; left:1.1em; right:1.1em;
+    z-index:10;
+    display:flex; flex-direction:column; align-items:flex-start;
+    opacity:0; transform:translateY(-8px);
+    transition:opacity .25s ease, transform .25s ease;
+  }
+  #bubbleWrap.visible{ opacity:1; transform:translateY(0); }
+  #nameTag{
+    font-family:'Baloo 2', sans-serif; font-weight:800; font-size:.92em;
+    color:var(--paper); background:var(--tagred);
+    padding:.32em 1.05em; border-radius:20px;
+    margin-left:1.1em; margin-bottom:-.75em; position:relative; z-index:2;
+    text-transform:uppercase; letter-spacing:.03em;
+    box-shadow:0 3px 0 var(--tagred-2);
+    transform:rotate(-2deg);
+  }
+  #nameTag::before{
+    content:"✦ "; opacity:.85;
+  }
+  #bubble{
+    position:relative;
+    background:var(--paper); color:var(--ink);
+    border:2px solid var(--paper-edge);
+    border-radius:20px;
+    padding:1.35em 1.25em 1em 1.25em;
+    font-family:'Baloo 2', sans-serif; font-weight:500; font-size:1.1em; line-height:1.38;
+    box-shadow:0 6px 0 rgba(90,55,30,.14), 0 10px 26px rgba(90,55,30,.18);
+    min-height:1.5em;
+  }
+  #bubble::after{
+    content:"";
+    position:absolute; bottom:-13px; width:22px; height:22px;
+    background:var(--paper); border-bottom:2px solid var(--paper-edge); border-right:2px solid var(--paper-edge);
+    transform:rotate(45deg);
+    transition:left .3s ease, right .3s ease;
+  }
+  #bubbleWrap.tail-left #bubble::after{ left:2em; right:auto; }
+  #bubbleWrap.tail-center #bubble::after{ left:50%; margin-left:-11px; right:auto; }
+  #bubbleWrap.tail-right #bubble::after{ right:2em; left:auto; }
+
+  .bubble-deco{
+    position:absolute; top:-.5em; right:.6em; font-size:1.3em; color:var(--coral);
+    transform:rotate(12deg); z-index:3; filter:drop-shadow(0 2px 0 rgba(90,55,30,.15));
+  }
+  #bubbleWrap.narration #nameTag{ display:none; }
+  #bubbleWrap.narration .bubble-deco{ display:none; }
+  #bubbleWrap.narration #bubble{
+    background:rgba(27,36,32,.85); color:#F4E9D8; border-color:rgba(255,255,255,.15); font-style:italic; text-align:center;
+  }
+  #bubbleWrap.narration #bubble::after{ display:none; }
+  #bubbleText .cursor{ display:inline-block; width:.5em; opacity:.6; animation:blink 1s steps(2) infinite; }
+  @keyframes blink{ 50%{opacity:0} }
+
+  .end-slate{
+    position:absolute; inset:0; background:rgba(20,15,10,.86); z-index:20;
+    display:flex; align-items:center; justify-content:center; flex-direction:column; gap:.4em;
+    opacity:0; pointer-events:none; transition:opacity .3s;
+    font-family:'Baloo 2',sans-serif;
+  }
+  .end-slate.visible{ opacity:1; pointer-events:auto; }
+  .end-slate .big{ font-size:1.4em; font-weight:800; color:#fff; }
+  .end-slate .small{ font-size:.8em; color:#cbb9a0; font-family:'Quicksand',sans-serif; font-weight:600; }
+
+  /* controls under stage */
+  .controls{
+    display:flex; align-items:center; gap:.6em; flex:0 0 auto; flex-wrap:wrap; justify-content:center;
+  }
+  .controls .progress{
+    font-family:'JetBrains Mono',monospace; font-size:.75em; color:var(--ink-soft); min-width:4.5em; text-align:center;
+    background:var(--card); border:1.5px solid var(--card-line); border-radius:999px; padding:.5em .7em;
+  }
+  .rec-btn{ background:var(--rec); border-color:var(--rec); color:#fff; }
+  .rec-btn:hover{ background:#c23c2f; border-color:#c23c2f; color:#fff; }
+
+  /* ---------- PRESENTATION MODE ---------- */
+  body.present .workspace aside,
+  body.present header,
+  body.present .controls{ display:none !important; }
+  body.present main.stage-wrap{ padding:0; background:#000; }
+  body.present .viewfinder{ height:100vh; }
+  body.present .corner{ opacity:0; transition:opacity .3s; }
+  body.present.show-chrome .corner{ opacity:1; }
+  #exitPresent{
+    position:fixed; top:1em; right:1em; z-index:50; opacity:0; pointer-events:none; transition:opacity .3s;
+  }
+  body.present.show-chrome #exitPresent{ opacity:1; pointer-events:auto; }
+
+  .toast{
+    position:fixed; bottom:1.4em; left:50%; transform:translateX(-50%);
+    background:var(--ink); color:#fff; border:1px solid rgba(255,255,255,.1); padding:.6em 1.2em; border-radius:999px;
+    font-size:.82em; font-weight:600; z-index:100; opacity:0; transition:opacity .25s, transform .25s; pointer-events:none;
+  }
+  .toast.visible{ opacity:1; transform:translateX(-50%) translateY(-6px); }
+
+  ::selection{ background:var(--coral); color:#fff; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <div class="brand">
+      <div class="dot"></div>
+      <div>
+        <h1>Scene Director <span>— visual novel clip builder</span></h1>
+      </div>
+    </div>
+    <div class="actions">
+      <button id="saveProjectBtn" class="ghost" title="Download project (script + cast + art) as JSON">💾 Save project</button>
+      <button id="loadProjectBtn" class="ghost" title="Load a saved project file">📂 Load project</button>
+      <input type="file" id="loadProjectInput" class="file-hidden" accept="application/json">
+      <button id="presentBtn" class="primary">🎬 Recording mode</button>
+    </div>
+  </header>
+
+  <div class="workspace">
+    <aside>
+
+      <div class="section">
+        <h2>Cast <span class="count" id="castCount">0</span></h2>
+        <div id="castList"></div>
+        <div class="row2" style="margin-top:.4em;">
+          <input type="text" id="newCharName" placeholder="Character name">
+          <button id="addCharBtn">+ Add</button>
+        </div>
+        <div class="hint">Characters are auto-detected from the script below. Click a portrait circle to upload art — a colored placeholder is used until you do. Tag lines like <code>Milly (angry): text</code> to switch her expression for that line.</div>
+      </div>
+
+      <div class="section">
+        <h2>Backdrop <span class="count" id="bgCount">0</span></h2>
+        <div id="bgList"></div>
+        <button id="addBgBtn" style="width:100%;">+ Upload background</button>
+        <input type="file" id="bgFileInput" class="file-hidden" accept="image/*">
+        <div class="hint">Reference a background mid-script with <code>[bg: Label]</code> on its own line.</div>
+      </div>
+
+      <div class="section">
+        <h2>Script</h2>
+        <textarea id="scriptInput" spellcheck="false"></textarea>
+        <div class="hint">
+          Format: <code>Name: dialogue</code> or <code>Name (expression): dialogue</code>. A line with no colon is narration. Use <code>[bg: Label]</code> to switch backgrounds.
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Playback</h2>
+        <div class="field">
+          <label>Typing speed <span class="range-val" id="speedVal">32</span> ms/char</label>
+          <input type="range" id="speedRange" min="0" max="80" value="32">
+        </div>
+        <div class="field">
+          <label style="display:flex; align-items:center; gap:.5em; text-transform:none; letter-spacing:0; font-size:.8em; color:var(--ink);">
+            <input type="checkbox" id="autoplayCheck" style="width:auto;"> Auto-advance lines
+          </label>
+        </div>
+        <div class="field" id="autoDelayWrap" style="display:none;">
+          <label>Delay after line <span class="range-val" id="delayVal">2.0</span>s</label>
+          <input type="range" id="delayRange" min="5" max="60" value="20">
+        </div>
+      </div>
+
+    </aside>
+
+    <main class="stage-wrap">
+      <div class="viewfinder">
+        <div class="corner tl"></div><div class="corner tr"></div>
+        <div class="corner bl"></div><div class="corner br"></div>
+        <div id="stage" tabindex="0">
+          <div id="bgLayer"><div class="placeholder-txt" id="bgPlaceholderTxt">No backdrop yet<br>upload one anytime</div></div>
+          <div id="spriteLayer"></div>
+          <div id="bubbleWrap">
+            <div id="nameTag"></div>
+            <div id="bubble"><span id="bubbleText"></span><span class="bubble-deco">✦</span></div>
+          </div>
+          <div class="end-slate" id="endSlate">
+            <div class="big">— End of scene —</div>
+            <div class="small">Press ⟲ to restart</div>
+          </div>
+        </div>
+      </div>
+      <div class="controls">
+        <button id="restartBtn" title="Restart from line 1">⟲</button>
+        <button id="prevBtn" title="Previous line">◀</button>
+        <button id="playBtn" class="primary" title="Play / advance (Space)">▶</button>
+        <button id="nextBtn" title="Next line">▶▶</button>
+        <div class="progress" id="progressLabel">0 / 0</div>
+        <button id="presentBtn2" class="rec-btn">🎬 Recording mode</button>
+      </div>
+    </main>
+  </div>
+</div>
+
+<button id="exitPresent">✕ Exit recording mode (Esc)</button>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============ IndexedDB image store ============ */
+  const DB_NAME = "sceneDirectorDB", STORE = "images";
+  let dbPromise = new Promise((resolve, reject)=>{
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = ()=> req.result.createObjectStore(STORE);
+    req.onsuccess = ()=> resolve(req.result);
+    req.onerror = ()=> reject(req.error);
+  });
+  async function idbSet(key, value){
+    const db = await dbPromise;
+    return new Promise((res,rej)=>{
+      const tx = db.transaction(STORE,"readwrite");
+      tx.objectStore(STORE).put(value, key);
+      tx.oncomplete = ()=>res(true);
+      tx.onerror = ()=>rej(tx.error);
+    });
+  }
+  async function idbGet(key){
+    const db = await dbPromise;
+    return new Promise((res,rej)=>{
+      const tx = db.transaction(STORE,"readonly");
+      const r = tx.objectStore(STORE).get(key);
+      r.onsuccess = ()=>res(r.result);
+      r.onerror = ()=>rej(r.error);
+    });
+  }
+  async function idbDelete(key){
+    const db = await dbPromise;
+    return new Promise((res,rej)=>{
+      const tx = db.transaction(STORE,"readwrite");
+      tx.objectStore(STORE).delete(key);
+      tx.oncomplete = ()=>res(true);
+      tx.onerror = ()=>rej(tx.error);
+    });
+  }
+
+  const LS_KEY = "sceneDirectorState";
+  const PALETTE = ["#E2694F","#8FAE8B","#D9A441","#6E9FBF","#B5729A","#C9713F","#6DB5A0","#A6402E"];
+  const POSITIONS = ["left","right","center"];
+  const imgCache = {}; // "char:name:tag" -> dataURL | null
+
+  let state = {
+    characters: {},     // name -> {color, position, expressions:["default", ...]}
+    backgrounds: [],    // [{id,label}]
+    currentBg: null,    // id
+    script: "Milly: I don't want this!\nOscar: But this medicine is necessary.\nMilly (angry): It tastes awful and you know it.\nOscar: I'll add honey this time, I promise.",
+    speed: 32,
+    autoplay: false,
+    delay: 2000
+  };
+
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(LS_KEY);
+      if(raw){
+        const parsed = JSON.parse(raw);
+        state = Object.assign(state, parsed);
+      }
+    }catch(e){ console.warn("state load failed", e); }
+    // ensure every character has an expressions list
+    Object.values(state.characters).forEach(c=>{
+      if(!Array.isArray(c.expressions) || !c.expressions.includes("default")){
+        c.expressions = ["default", ...(Array.isArray(c.expressions)?c.expressions.filter(t=>t!=="default"):[])];
+      }
+    });
+  }
+  function saveState(){
+    try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+    catch(e){ console.warn("state save failed", e); }
+  }
+
+  function toast(msg){
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("visible");
+    clearTimeout(toast._h);
+    toast._h = setTimeout(()=>t.classList.remove("visible"), 1800);
+  }
+
+  function fileToDataUrl(file){
+    return new Promise((res,rej)=>{
+      const r = new FileReader();
+      r.onload = ()=>res(r.result);
+      r.onerror = rej;
+      r.readAsDataURL(file);
+    });
+  }
+
+  async function getCharImage(name, tag){
+    const key = "char:"+name+":"+(tag||"default");
+    if(key in imgCache) return imgCache[key];
+    let data = await idbGet(key).catch(()=>null);
+    if(!data && tag && tag!=="default"){
+      const dkey = "char:"+name+":default";
+      if(!(dkey in imgCache)) imgCache[dkey] = await idbGet(dkey).catch(()=>null);
+      data = imgCache[dkey];
+    }
+    imgCache[key] = data || null;
+    return data || null;
+  }
+  function invalidateCharCache(name){
+    Object.keys(imgCache).forEach(k=>{ if(k.startsWith("char:"+name+":")) delete imgCache[k]; });
+  }
+
+  /* ============ Script parsing ============ */
+  // {type:'dialogue',speaker,tag,text} | {type:'narration',text} | {type:'directive',key,value}
+  function parseScript(text){
+    const lines = text.split("\n");
+    const out = [];
+    for(let raw of lines){
+      const line = raw.trim();
+      if(!line) continue;
+      const dm = line.match(/^\[\s*([a-zA-Z]+)\s*:\s*(.+?)\s*\]$/);
+      if(dm){ out.push({type:"directive", key: dm[1].toLowerCase(), value: dm[2]}); continue; }
+      const cm = line.match(/^([^:()]{1,32}?)(?:\s*\(([^)]{1,20})\))?\s*:\s*(.+)$/);
+      if(cm && !/^https?:\/\//i.test(line)){
+        out.push({type:"dialogue", speaker: cm[1].trim(), tag: (cm[2]||"default").trim().toLowerCase(), text: cm[3].trim()});
+      } else {
+        out.push({type:"narration", text: line});
+      }
+    }
+    return out;
+  }
+
+  function detectCharacters(lines){
+    const order = [];
+    lines.forEach(l=>{ if(l.type==="dialogue" && !order.includes(l.speaker)) order.push(l.speaker); });
+    order.forEach((name, i)=>{
+      if(!state.characters[name]){
+        state.characters[name] = { color: PALETTE[Object.keys(state.characters).length % PALETTE.length], position: POSITIONS[i % 3], expressions:["default"] };
+      }
+    });
+    // also make sure any tag used gets registered as an available expression
+    lines.forEach(l=>{
+      if(l.type==="dialogue" && l.tag && l.tag!=="default"){
+        const c = state.characters[l.speaker];
+        if(c && !c.expressions.includes(l.tag)) c.expressions.push(l.tag);
+      }
+    });
+  }
+
+  /* ============ Rendering: Cast panel ============ */
+  const castList = document.getElementById("castList");
+  const castCount = document.getElementById("castCount");
+
+  function initials(name){
+    return name.trim().split(/\s+/).map(w=>w[0]).slice(0,2).join("").toUpperCase();
+  }
+
+  async function renderCast(){
+    castList.innerHTML = "";
+    const names = Object.keys(state.characters);
+    castCount.textContent = names.length;
+    for(const name of names){
+      const c = state.characters[name];
+      const row = document.createElement("div");
+      row.className = "char-row";
+
+      const thumb = document.createElement("div");
+      thumb.className = "thumb";
+      thumb.style.background = c.color;
+      thumb.textContent = initials(name);
+      thumb.title = "Click to upload default portrait";
+
+      const defaultData = await getCharImage(name, "default");
+      if(defaultData){
+        thumb.style.backgroundImage = `url(${defaultData})`;
+        thumb.style.backgroundSize = "cover";
+        thumb.textContent = "";
+      }
+
+      const fileInput = document.createElement("input");
+      fileInput.type = "file"; fileInput.accept = "image/*"; fileInput.className = "file-hidden";
+      fileInput.addEventListener("change", async (e)=>{
+        const f = e.target.files[0]; if(!f) return;
+        const dataUrl = await fileToDataUrl(f);
+        await idbSet("char:"+name+":default", dataUrl);
+        invalidateCharCache(name);
+        toast(name+"'s default portrait updated");
+        renderCast(); updateSpriteVisuals();
+      });
+      thumb.addEventListener("click", ()=>fileInput.click());
+
+      const main = document.createElement("div");
+      main.className = "char-main";
+
+      const meta = document.createElement("div");
+      meta.className = "char-meta";
+      const nameEl = document.createElement("div");
+      nameEl.className = "name"; nameEl.textContent = name;
+
+      const sub = document.createElement("div"); sub.className = "sub";
+      const posSel = document.createElement("select");
+      POSITIONS.forEach(p=>{
+        const o = document.createElement("option"); o.value=p; o.textContent=p[0].toUpperCase()+p.slice(1);
+        if(c.position===p) o.selected = true;
+        posSel.appendChild(o);
+      });
+      posSel.addEventListener("change", ()=>{ c.position = posSel.value; saveState(); rebuildSpriteElements(); });
+
+      const colorInput = document.createElement("input");
+      colorInput.type = "color"; colorInput.className = "colorpick"; colorInput.value = c.color;
+      colorInput.addEventListener("input", ()=>{
+        c.color = colorInput.value; thumb.style.background = c.color; saveState(); rebuildSpriteElements();
+      });
+
+      const delBtn = document.createElement("button");
+      delBtn.className = "icon-btn ghost"; delBtn.style.color = "var(--ink-soft)"; delBtn.style.background="#fff"; delBtn.style.borderColor="var(--card-line)";
+      delBtn.textContent = "✕"; delBtn.title = "Remove character";
+      delBtn.addEventListener("click", async ()=>{
+        for(const tag of c.expressions) await idbDelete("char:"+name+":"+tag);
+        delete state.characters[name];
+        invalidateCharCache(name);
+        saveState(); renderCast(); rebuildSpriteElements();
+      });
+
+      sub.appendChild(posSel); sub.appendChild(colorInput); sub.appendChild(delBtn);
+      meta.appendChild(nameEl); meta.appendChild(sub);
+      main.appendChild(meta);
+
+      // expression chips
+      const exprRow = document.createElement("div");
+      exprRow.className = "expr-row";
+      for(const tag of c.expressions){
+        const chip = document.createElement("div");
+        chip.className = "expr-chip";
+        const mini = document.createElement("div");
+        mini.className = "mini";
+        mini.style.background = c.color;
+        const data = await getCharImage(name, tag);
+        if(tag==="default" ? data : (await idbGet("char:"+name+":"+tag).catch(()=>null))){
+          mini.style.backgroundImage = `url(${data})`;
+        } else {
+          mini.textContent = tag[0].toUpperCase();
+        }
+        const label = document.createElement("span");
+        label.textContent = tag;
+        chip.appendChild(mini); chip.appendChild(label);
+
+        const exprFile = document.createElement("input");
+        exprFile.type = "file"; exprFile.accept = "image/*"; exprFile.className = "file-hidden";
+        exprFile.addEventListener("change", async (e)=>{
+          const f = e.target.files[0]; if(!f) return;
+          const dataUrl = await fileToDataUrl(f);
+          await idbSet("char:"+name+":"+tag, dataUrl);
+          invalidateCharCache(name);
+          toast(`${name} — "${tag}" portrait updated`);
+          renderCast(); updateSpriteVisuals();
+        });
+        chip.appendChild(exprFile);
+        chip.addEventListener("click", (e)=>{ if(e.target.classList.contains("rm")) return; exprFile.click(); });
+
+        if(tag !== "default"){
+          const rm = document.createElement("span");
+          rm.className = "rm"; rm.textContent = "✕"; rm.title = "Remove this expression";
+          rm.addEventListener("click", async (e)=>{
+            e.stopPropagation();
+            c.expressions = c.expressions.filter(t=>t!==tag);
+            await idbDelete("char:"+name+":"+tag);
+            invalidateCharCache(name);
+            saveState(); renderCast(); updateSpriteVisuals();
+          });
+          chip.appendChild(rm);
+        }
+        exprRow.appendChild(chip);
+      }
+      const addChip = document.createElement("div");
+      addChip.className = "expr-chip add";
+      addChip.textContent = "+ expression";
+      addChip.title = "Add a named expression, e.g. happy, angry, surprised";
+      addChip.addEventListener("click", ()=>{
+        const tag = prompt("Expression name (e.g. happy, angry, surprised):");
+        if(!tag) return;
+        const clean = tag.trim().toLowerCase();
+        if(!clean) return;
+        if(!c.expressions.includes(clean)) c.expressions.push(clean);
+        saveState(); renderCast();
+      });
+      exprRow.appendChild(addChip);
+      main.appendChild(exprRow);
+
+      row.appendChild(thumb); row.appendChild(main); row.appendChild(fileInput);
+      castList.appendChild(row);
+    }
+  }
+
+  document.getElementById("addCharBtn").addEventListener("click", ()=>{
+    const inp = document.getElementById("newCharName");
+    const name = inp.value.trim();
+    if(!name) return;
+    if(!state.characters[name]){
+      state.characters[name] = { color: PALETTE[Object.keys(state.characters).length % PALETTE.length], position: POSITIONS[Object.keys(state.characters).length % 3], expressions:["default"] };
+    }
+    inp.value = "";
+    saveState(); renderCast();
+  });
+
+  /* ============ Backgrounds panel ============ */
+  const bgList = document.getElementById("bgList");
+  const bgCount = document.getElementById("bgCount");
+
+  async function renderBackgrounds(){
+    bgList.innerHTML = "";
+    bgCount.textContent = state.backgrounds.length;
+    for(const bg of state.backgrounds){
+      const row = document.createElement("div");
+      row.className = "bg-row" + (state.currentBg===bg.id ? " active" : "");
+      const thumb = document.createElement("div"); thumb.className = "bg-thumb";
+      const data = await idbGet("bg:"+bg.id).catch(()=>null);
+      if(data) thumb.style.backgroundImage = `url(${data})`;
+      const nameEl = document.createElement("div"); nameEl.className="name"; nameEl.textContent = bg.label;
+      const delBtn = document.createElement("button"); delBtn.className="icon-btn ghost"; delBtn.style.color="var(--ink-soft)"; delBtn.style.background="#fff"; delBtn.style.borderColor="var(--card-line)"; delBtn.textContent="✕";
+      delBtn.title = "Delete background";
+      delBtn.addEventListener("click", async (e)=>{
+        e.stopPropagation();
+        state.backgrounds = state.backgrounds.filter(b=>b.id!==bg.id);
+        if(state.currentBg===bg.id) state.currentBg = state.backgrounds[0]?.id || null;
+        await idbDelete("bg:"+bg.id);
+        saveState(); renderBackgrounds(); applyBackground();
+      });
+      row.addEventListener("click", ()=>{ state.currentBg = bg.id; saveState(); renderBackgrounds(); applyBackground(); });
+      row.appendChild(thumb); row.appendChild(nameEl); row.appendChild(delBtn);
+      bgList.appendChild(row);
+    }
+  }
+
+  document.getElementById("addBgBtn").addEventListener("click", ()=>document.getElementById("bgFileInput").click());
+  document.getElementById("bgFileInput").addEventListener("change", async (e)=>{
+    const f = e.target.files[0]; if(!f) return;
+    const dataUrl = await fileToDataUrl(f);
+    const id = "bg_"+Date.now();
+    const label = f.name.replace(/\.[^.]+$/,"").slice(0,28) || "Background";
+    state.backgrounds.push({id, label});
+    await idbSet("bg:"+id, dataUrl);
+    state.currentBg = id;
+    saveState(); renderBackgrounds(); applyBackground();
+    toast("Background added: "+label);
+    e.target.value = "";
+  });
+
+  async function applyBackground(){
+    const layer = document.getElementById("bgLayer");
+    const ph = document.getElementById("bgPlaceholderTxt");
+    if(!state.currentBg){
+      layer.style.backgroundImage = "";
+      ph.style.display = "block";
+      return;
+    }
+    const data = await idbGet("bg:"+state.currentBg).catch(()=>null);
+    if(data){
+      layer.style.backgroundImage = `url(${data})`;
+      ph.style.display = "none";
+    } else {
+      layer.style.backgroundImage = "";
+      ph.style.display = "block";
+    }
+  }
+
+  function setBackgroundByLabel(label){
+    const match = state.backgrounds.find(b=>b.label.toLowerCase()===label.trim().toLowerCase());
+    if(match){ state.currentBg = match.id; saveState(); renderBackgrounds(); applyBackground(); }
+  }
+
+  /* ============ Stage: sprites + bubble ============ */
+  const spriteLayer = document.getElementById("spriteLayer");
+  const bubbleWrap = document.getElementById("bubbleWrap");
+  const nameTag = document.getElementById("nameTag");
+  const bubbleText = document.getElementById("bubbleText");
+  const endSlate = document.getElementById("endSlate");
+
+  let spriteEls = {}; // name -> element
+
+  function rebuildSpriteElements(){
+    spriteLayer.innerHTML = "";
+    spriteEls = {};
+    for(const name of Object.keys(state.characters)){
+      const c = state.characters[name];
+      const el = document.createElement("div");
+      el.className = "sprite pos-"+c.position;
+      const initialsSpan = document.createElement("div");
+      initialsSpan.className = "initials";
+      initialsSpan.style.background = c.color;
+      initialsSpan.textContent = initials(name);
+      el.appendChild(initialsSpan);
+      el.dataset.name = name;
+      spriteLayer.appendChild(el);
+      spriteEls[name] = el;
+    }
+    updateSpriteVisuals();
+  }
+
+  function lastTagsUpToCursor(){
+    const map = {};
+    for(let i=0;i<=cursor;i++){
+      const l = timeline[i];
+      if(l && l.type==="dialogue") map[l.speaker] = l.tag || "default";
+    }
+    return map;
+  }
+
+  async function updateSpriteVisuals(){
+    const lastTags = lastTagsUpToCursor();
+    const current = timeline[cursor];
+    for(const [name, el] of Object.entries(spriteEls)){
+      const appeared = name in lastTags;
+      el.classList.toggle("shown", appeared);
+      const speaking = current && current.type==="dialogue" && current.speaker===name;
+      el.classList.toggle("speaking", !!speaking);
+      if(appeared){
+        const tag = lastTags[name];
+        const data = await getCharImage(name, tag);
+        if(data){
+          el.style.backgroundImage = `url(${data})`;
+          el.classList.add("has-image");
+        } else {
+          el.style.backgroundImage = "";
+          el.classList.remove("has-image");
+        }
+      }
+    }
+  }
+
+  /* ============ Timeline / playback ============ */
+  let timeline = [];
+  let cursor = -1;
+  let typing = null;
+  let autoTimer = null;
+
+  function rebuildTimeline(){
+    const parsed = parseScript(state.script);
+    detectCharacters(parsed);
+    timeline = parsed;
+    cursor = Math.min(cursor, timeline.length-1);
+    saveState();
+    renderCast();
+    rebuildSpriteElements();
+    updateProgress();
+  }
+
+  function updateProgress(){
+    const total = timeline.filter(l=>l.type!=="directive").length;
+    const doneCount = timeline.slice(0, cursor+1).filter(l=>l.type!=="directive").length;
+    document.getElementById("progressLabel").textContent = `${Math.max(doneCount,0)} / ${total}`;
+  }
+
+  function clearAutoTimer(){ if(autoTimer){ clearTimeout(autoTimer); autoTimer=null; } }
+
+  async function goTo(index){
+    clearAutoTimer();
+    if(typing) { clearInterval(typing.timer); typing=null; }
+    if(index < 0) index = -1;
+    if(index >= timeline.length){
+      cursor = timeline.length-1;
+      endSlate.classList.add("visible");
+      updateProgress();
+      await updateSpriteVisuals();
+      return;
+    }
+    endSlate.classList.remove("visible");
+    cursor = index;
+    let line = timeline[cursor];
+
+    while(line && line.type==="directive"){
+      if(line.key==="bg"){ setBackgroundByLabel(line.value); }
+      cursor++;
+      if(cursor>=timeline.length){ endSlate.classList.add("visible"); updateProgress(); await updateSpriteVisuals(); return; }
+      line = timeline[cursor];
+    }
+
+    updateProgress();
+    await updateSpriteVisuals();
+
+    if(!line) return;
+
+    bubbleWrap.classList.remove("tail-left","tail-center","tail-right","narration");
+    if(line.type==="dialogue"){
+      const c = state.characters[line.speaker] || {color:"#E2694F", position:"center"};
+      nameTag.textContent = line.speaker;
+      nameTag.style.background = c.color;
+      bubbleWrap.classList.add("tail-"+c.position);
+    } else {
+      bubbleWrap.classList.add("narration");
+      nameTag.textContent = "";
+    }
+    bubbleWrap.classList.add("visible");
+
+    typeText(line.text);
+  }
+
+  function typeText(full){
+    bubbleText.textContent = "";
+    if(state.speed <= 0){
+      bubbleText.textContent = full;
+      afterTypeComplete();
+      return;
+    }
+    typing = { full, i:0 };
+    typing.timer = setInterval(()=>{
+      typing.i++;
+      bubbleText.textContent = full.slice(0, typing.i);
+      if(typing.i >= full.length){
+        clearInterval(typing.timer);
+        typing = null;
+        afterTypeComplete();
+      }
+    }, state.speed);
+  }
+
+  function afterTypeComplete(){
+    if(state.autoplay){
+      clearAutoTimer();
+      autoTimer = setTimeout(()=>{ goTo(cursor+1); }, state.delay);
+    }
+  }
+
+  function completeTypingNow(){
+    if(typing){
+      clearInterval(typing.timer);
+      bubbleText.textContent = typing.full;
+      typing = null;
+      afterTypeComplete();
+      return true;
+    }
+    return false;
+  }
+
+  function advance(){
+    if(completeTypingNow()) return;
+    goTo(cursor+1);
+  }
+  function retreat(){
+    clearAutoTimer();
+    goTo(Math.max(cursor-1, 0));
+  }
+  function restart(){
+    clearAutoTimer();
+    endSlate.classList.remove("visible");
+    goTo(0);
+  }
+
+  /* ============ Wiring: script + settings ============ */
+  const scriptInput = document.getElementById("scriptInput");
+  let scriptDebounce;
+  scriptInput.addEventListener("input", ()=>{
+    state.script = scriptInput.value;
+    clearTimeout(scriptDebounce);
+    scriptDebounce = setTimeout(()=>{ rebuildTimeline(); }, 350);
+  });
+
+  const speedRange = document.getElementById("speedRange");
+  speedRange.addEventListener("input", ()=>{
+    state.speed = parseInt(speedRange.value,10);
+    document.getElementById("speedVal").textContent = state.speed;
+    saveState();
+  });
+
+  const autoplayCheck = document.getElementById("autoplayCheck");
+  autoplayCheck.addEventListener("change", ()=>{
+    state.autoplay = autoplayCheck.checked;
+    document.getElementById("autoDelayWrap").style.display = state.autoplay ? "block":"none";
+    saveState();
+  });
+
+  const delayRange = document.getElementById("delayRange");
+  delayRange.addEventListener("input", ()=>{
+    state.delay = parseInt(delayRange.value,10)*100;
+    document.getElementById("delayVal").textContent = (state.delay/1000).toFixed(1);
+    saveState();
+  });
+
+  /* ============ Controls ============ */
+  document.getElementById("playBtn").addEventListener("click", advance);
+  document.getElementById("nextBtn").addEventListener("click", ()=>{ clearAutoTimer(); if(!completeTypingNow()) goTo(cursor+1); });
+  document.getElementById("prevBtn").addEventListener("click", retreat);
+  document.getElementById("restartBtn").addEventListener("click", restart);
+  document.getElementById("stage").addEventListener("click", advance);
+
+  document.addEventListener("keydown", (e)=>{
+    if(e.target.tagName==="TEXTAREA" || e.target.tagName==="INPUT") return;
+    if(e.code==="Space"){ e.preventDefault(); advance(); }
+    else if(e.code==="ArrowRight"){ advance(); }
+    else if(e.code==="ArrowLeft"){ retreat(); }
+    else if(e.code==="KeyR"){ restart(); }
+    else if(e.code==="Escape"){ if(document.body.classList.contains("present")) exitPresent(); }
+  });
+
+  /* ============ Presentation / recording mode ============ */
+  function enterPresent(){
+    document.body.classList.add("present");
+    document.getElementById("stage").focus();
+    showChromeBriefly();
+  }
+  function exitPresent(){
+    document.body.classList.remove("present");
+  }
+  let chromeTimer;
+  function showChromeBriefly(){
+    document.body.classList.add("show-chrome");
+    clearTimeout(chromeTimer);
+    chromeTimer = setTimeout(()=>document.body.classList.remove("show-chrome"), 1600);
+  }
+  document.getElementById("presentBtn").addEventListener("click", enterPresent);
+  document.getElementById("presentBtn2").addEventListener("click", enterPresent);
+  document.getElementById("exitPresent").addEventListener("click", exitPresent);
+  document.addEventListener("mousemove", ()=>{ if(document.body.classList.contains("present")) showChromeBriefly(); });
+
+  /* ============ Save / load project ============ */
+  document.getElementById("saveProjectBtn").addEventListener("click", async ()=>{
+    const proj = { state, images: {} };
+    for(const name of Object.keys(state.characters)){
+      for(const tag of state.characters[name].expressions){
+        const d = await idbGet("char:"+name+":"+tag).catch(()=>null);
+        if(d) proj.images["char:"+name+":"+tag] = d;
+      }
+    }
+    for(const bg of state.backgrounds){
+      const d = await idbGet("bg:"+bg.id).catch(()=>null);
+      if(d) proj.images["bg:"+bg.id] = d;
+    }
+    const blob = new Blob([JSON.stringify(proj)], {type:"application/json"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "scene-director-project.json";
+    a.click();
+    toast("Project downloaded");
+  });
+
+  document.getElementById("loadProjectBtn").addEventListener("click", ()=>document.getElementById("loadProjectInput").click());
+  document.getElementById("loadProjectInput").addEventListener("change", async (e)=>{
+    const f = e.target.files[0]; if(!f) return;
+    try{
+      const text = await f.text();
+      const proj = JSON.parse(text);
+      state = Object.assign(state, proj.state);
+      Object.values(state.characters).forEach(c=>{
+        if(!Array.isArray(c.expressions) || !c.expressions.includes("default")) c.expressions = ["default", ...(c.expressions||[]).filter(t=>t!=="default")];
+      });
+      for(const [key, data] of Object.entries(proj.images || {})){
+        await idbSet(key, data);
+      }
+      Object.keys(imgCache).forEach(k=>delete imgCache[k]);
+      scriptInput.value = state.script;
+      speedRange.value = state.speed; document.getElementById("speedVal").textContent = state.speed;
+      autoplayCheck.checked = state.autoplay;
+      document.getElementById("autoDelayWrap").style.display = state.autoplay ? "block":"none";
+      delayRange.value = state.delay/100; document.getElementById("delayVal").textContent = (state.delay/1000).toFixed(1);
+      saveState();
+      rebuildTimeline();
+      await renderBackgrounds(); await applyBackground();
+      restart();
+      toast("Project loaded");
+    }catch(err){ console.error(err); toast("Couldn't read that project file"); }
+    e.target.value = "";
+  });
+
+  /* ============ Init ============ */
+  loadState();
+  scriptInput.value = state.script;
+  speedRange.value = state.speed; document.getElementById("speedVal").textContent = state.speed;
+  autoplayCheck.checked = state.autoplay;
+  document.getElementById("autoDelayWrap").style.display = state.autoplay ? "block":"none";
+  delayRange.value = state.delay/100; document.getElementById("delayVal").textContent = (state.delay/1000).toFixed(1);
+
+  (async function init(){
+    rebuildTimeline();
+    await renderBackgrounds();
+    await applyBackground();
+    if(timeline.length) goTo(0); else updateProgress();
+  })();
+
+})();
+</script>
+</body>
+</html>
