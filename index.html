@@ -255,6 +255,7 @@
   #spriteLayer{ position:absolute; inset:0; }
   .sprite{
     position:absolute; bottom:0; height:62%;
+    width:46%;
     max-width:78%;
     background-size:contain; background-repeat:no-repeat; background-position:bottom center;
     filter:brightness(.55) saturate(.75);
@@ -322,8 +323,9 @@
   #bubbleWrap.tail-right #bubble::after{ right:20%; left:auto; }
 
   .bubble-deco{
-    position:absolute; top:-.5em; right:.6em; font-size:1.3em; color:var(--coral);
-    transform:rotate(12deg); z-index:3; filter:drop-shadow(0 2px 0 rgba(90,55,30,.15));
+    position:absolute; bottom:.4em; right:.55em; top:auto; font-size:1.05em; color:var(--coral);
+    opacity:.65; transform:rotate(12deg); z-index:1; pointer-events:none;
+    filter:drop-shadow(0 1px 0 rgba(90,55,30,.12));
   }
   #bubbleWrap.narration #nameTag{ display:none; }
   #bubbleWrap.narration .bubble-deco{ display:none; }
