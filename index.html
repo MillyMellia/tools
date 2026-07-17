@@ -154,7 +154,9 @@
   }
   .char-main{ flex:1; min-width:0; }
   .char-meta .name{ font-weight:700; font-size:.9em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-family:'Baloo 2',sans-serif; }
-  .char-meta .sub{ display:flex; gap:.4em; margin-top:.4em; }
+  .char-meta .sub{ display:flex; flex-wrap:wrap; gap:.4em; margin-top:.4em; }
+  .char-meta .sub select{ flex:0 0 auto; }
+  .char-meta .sub .entrance-sel{ max-width:100%; }
   .char-meta select{ padding:.3em .4em; font-size:.72em; border-radius:9px; }
   .colorpick{ width:28px; height:28px; border-radius:9px; border:1.5px solid var(--card-line); padding:0; background:none; cursor:pointer; }
   .icon-btn{ width:26px;height:26px; padding:0; border-radius:8px; flex:0 0 26px; font-size:.8em; }
@@ -286,6 +288,8 @@
     transition:opacity .25s ease, transform .25s ease;
   }
   #bubbleWrap.visible{ opacity:1; transform:translateY(0); }
+  #bubbleWrap.tail-right{ align-items:flex-end; }
+  #bubbleWrap.tail-center{ align-items:center; }
   #nameTag{
     font-family:'Baloo 2', sans-serif; font-weight:800; font-size:.92em;
     color:var(--paper); background:var(--tagred);
@@ -295,6 +299,8 @@
     box-shadow:0 3px 0 var(--tagred-2);
     transform:rotate(-2deg);
   }
+  #bubbleWrap.tail-right #nameTag{ margin-left:0; margin-right:1.1em; transform:rotate(2deg); }
+  #bubbleWrap.tail-center #nameTag{ margin-left:0; }
   #nameTag::before{
     content:"✦ "; opacity:.85;
   }
@@ -611,7 +617,7 @@
     lines.forEach(l=>{ if(l.type==="dialogue" && !order.includes(l.speaker)) order.push(l.speaker); });
     order.forEach((name, i)=>{
       if(!state.characters[name]){
-        state.characters[name] = { color: PALETTE[Object.keys(state.characters).length % PALETTE.length], position: POSITIONS[i % 3], expressions:["default"] };
+        state.characters[name] = { color: PALETTE[Object.keys(state.characters).length % PALETTE.length], position: POSITIONS[i % 3], expressions:["default"], entrance:"stack" };
       }
     });
     // also make sure any tag used gets registered as an available expression
@@ -682,6 +688,19 @@
       });
       posSel.addEventListener("change", ()=>{ c.position = posSel.value; saveState(); rebuildSpriteElements(); });
 
+      const entranceSel = document.createElement("select");
+      entranceSel.className = "entrance-sel";
+      entranceSel.title = "When "+name+" enters and someone else is already on that side...";
+      [
+        ["stack", "Share side"],
+        ["replace", "Replace others"]
+      ].forEach(([val, label])=>{
+        const o = document.createElement("option"); o.value = val; o.textContent = label;
+        if((c.entrance||"stack")===val) o.selected = true;
+        entranceSel.appendChild(o);
+      });
+      entranceSel.addEventListener("change", ()=>{ c.entrance = entranceSel.value; saveState(); rebuildSpriteElements(); });
+
       const colorInput = document.createElement("input");
       colorInput.type = "color"; colorInput.className = "colorpick"; colorInput.value = c.color;
       colorInput.addEventListener("input", ()=>{
@@ -698,7 +717,7 @@
         saveState(); renderCast(); rebuildSpriteElements();
       });
 
-      sub.appendChild(posSel); sub.appendChild(colorInput); sub.appendChild(delBtn);
+      sub.appendChild(posSel); sub.appendChild(entranceSel); sub.appendChild(colorInput); sub.appendChild(delBtn);
       meta.appendChild(nameEl); meta.appendChild(sub);
       main.appendChild(meta);
 
@@ -773,7 +792,7 @@
     const name = inp.value.trim();
     if(!name) return;
     if(!state.characters[name]){
-      state.characters[name] = { color: PALETTE[Object.keys(state.characters).length % PALETTE.length], position: POSITIONS[Object.keys(state.characters).length % 3], expressions:["default"] };
+      state.characters[name] = { color: PALETTE[Object.keys(state.characters).length % PALETTE.length], position: POSITIONS[Object.keys(state.characters).length % 3], expressions:["default"], entrance:"stack" };
     }
     inp.value = "";
     saveState(); renderCast();
@@ -873,25 +892,81 @@
     updateSpriteVisuals();
   }
 
-  function lastTagsUpToCursor(){
-    const map = {};
-    for(let i=0;i<=cursor;i++){
+  // Walks the timeline up to `uptoCursor` and figures out, for every character,
+  // whether they're currently visible and what side of the stage they're standing on —
+  // taking each character's "entrance" setting into account (replace vs share/stack a side).
+  function computePresence(uptoCursor){
+    const presence = {}; // name -> {visible, tag}
+    const slots = {left:[], right:[], center:[]}; // ordered occupants per side, oldest first
+
+    for(let i=0;i<=uptoCursor && i<timeline.length;i++){
       const l = timeline[i];
-      if(l && l.type==="dialogue") map[l.speaker] = l.tag || "default";
+      if(!l || l.type!=="dialogue") continue;
+      const name = l.speaker;
+      const c = state.characters[name];
+      if(!c) continue;
+      if(!presence[name]) presence[name] = {visible:false, tag:"default"};
+      presence[name].tag = l.tag || "default";
+
+      if(!presence[name].visible){
+        const pos = c.position;
+        const slot = slots[pos] || (slots[pos] = []);
+        if(!slot.includes(name)){
+          if(c.entrance === "replace"){
+            // this character takes over the side — whoever was there steps out
+            slot.forEach(other=>{ if(presence[other]) presence[other].visible = false; });
+            slots[pos] = [name];
+          } else {
+            // share the side — everyone already there stays, we just make room
+            slot.push(name);
+          }
+        }
+        presence[name].visible = true;
+      }
     }
-    return map;
+    return {presence, slots};
+  }
+
+  // Works out the left/right/width for one occupant of a (possibly shared) side.
+  function slotStyle(pos, index, count){
+    if(count<=1) return {};
+    const BASE = 4, STEP = 15, WIDTH = "36%";
+    if(pos==="left") return {left:(BASE + index*STEP)+"%", width:WIDTH};
+    if(pos==="right") return {right:(BASE + index*STEP)+"%", width:WIDTH};
+    // center: spread symmetrically around the middle
+    const mid = (count-1)/2;
+    return {left:(50 + (index-mid)*STEP)+"%", width:WIDTH};
   }
 
   async function updateSpriteVisuals(){
-    const lastTags = lastTagsUpToCursor();
+    const {presence, slots} = computePresence(cursor);
     const current = timeline[cursor];
+
+    // figure out per-side stacking order (only counting who's actually still visible)
+    const styleFor = {};
+    for(const pos of Object.keys(slots)){
+      const occupants = slots[pos].filter(n=>presence[n] && presence[n].visible);
+      occupants.forEach((name, idx)=>{ styleFor[name] = slotStyle(pos, idx, occupants.length); });
+    }
+
     for(const [name, el] of Object.entries(spriteEls)){
-      const appeared = name in lastTags;
+      const p = presence[name];
+      const appeared = !!(p && p.visible);
       el.classList.toggle("shown", appeared);
       const speaking = current && current.type==="dialogue" && current.speaker===name;
       el.classList.toggle("speaking", !!speaking);
+
+      // reset any previous stacking overrides, then re-apply if needed
+      el.style.left = ""; el.style.right = ""; el.style.width = "";
+      const s = styleFor[name];
+      if(appeared && s){
+        if(s.left!=null) el.style.left = s.left;
+        if(s.right!=null) el.style.right = s.right;
+        if(s.width!=null) el.style.width = s.width;
+      }
+
       if(appeared){
-        const tag = lastTags[name];
+        const tag = p.tag;
         const data = await getCharImage(name, tag);
         if(data){
           el.style.backgroundImage = `url(${data})`;
