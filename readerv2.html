@@ -102,11 +102,23 @@
 </head>
 <body class="min-h-screen flex flex-col font-sans antialiased p-2 sm:p-4 lg:p-6">
 
+    <!-- Contextual Sentence Action Bar (Hidden from Read Aloud) -->
+    <div id="sentenceToolbar" aria-hidden="true" class="fixed hidden z-50 bg-sage-800 text-cream-100 text-xs px-3 py-1.5 rounded-2xl shadow-lg border border-sage-600 flex items-center gap-2 transition-all transform -translate-x-1/2 -translate-y-full">
+        <button onclick="bookmarkCurrentSelectedSentence()" class="hover:text-cream-200 font-semibold flex items-center gap-1">
+            <i data-lucide="bookmark" class="w-3.5 h-3.5"></i> Bookmark
+        </button>
+        <span class="text-sage-500">|</span>
+        <button onclick="copyCurrentSentenceText()" class="hover:text-cream-200 font-semibold flex items-center gap-1">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy
+        </button>
+        <button onclick="hideSentenceToolbar()" class="text-sage-400 hover:text-cream-100 ml-1">✕</button>
+    </div>
+
     <!-- Top Floating Header Bar -->
     <header class="max-w-7xl w-full mx-auto mb-4 bg-cream-100 rounded-3xl p-4 shadow-sm border border-cream-300/60 flex flex-wrap items-center justify-between gap-3">
         
         <div class="flex items-center space-x-3">
-            <div class="w-11 h-11 rounded-2xl bg-sage-700 text-cream-100 flex items-center justify-center font-serif text-xl font-medium shadow-sm">
+            <div class="w-11 h-11 rounded-2xl bg-sage-700 text-cream-100 flex items-center justify-center font-serif text-xl font-medium shadow-sm" aria-hidden="true">
                 🌿
             </div>
             <div>
@@ -118,7 +130,7 @@
         </div>
 
         <!-- Mode Toggle, Focus Mode & Theme Selector -->
-        <div class="flex items-center flex-wrap gap-2 sm:gap-3">
+        <div class="flex items-center flex-wrap gap-2 sm:gap-3" aria-hidden="true">
             <!-- Focus Mode Button (Optimized for Edge Read Aloud) -->
             <button id="focusModeBtn" onclick="toggleFocusMode()" class="px-3 py-1.5 rounded-2xl text-xs font-semibold bg-cream-200 hover:bg-cream-300 text-sage-800 flex items-center gap-1.5 transition">
                 <i data-lucide="book-open" class="w-3.5 h-3.5 text-sage-700"></i>
@@ -148,7 +160,7 @@
     </header>
 
     <!-- Resume Progress Toast Banner -->
-    <div id="resumeBanner" class="max-w-7xl w-full mx-auto mb-4 hidden bg-sage-700 text-cream-100 p-3 px-5 rounded-2xl shadow-sm flex items-center justify-between text-xs transition-all">
+    <div id="resumeBanner" aria-hidden="true" class="max-w-7xl w-full mx-auto mb-4 hidden bg-sage-700 text-cream-100 p-3 px-5 rounded-2xl shadow-sm flex items-center justify-between text-xs transition-all">
         <div class="flex items-center gap-2">
             <i data-lucide="bookmark-check" class="w-4 h-4 text-cream-200"></i>
             <span>Resume where you left off in <b id="resumeDocName">Document</b> (Page <span id="resumePageNum">1</span>)?</span>
@@ -163,7 +175,7 @@
     <div class="max-w-7xl w-full mx-auto flex-1 grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
         
         <!-- Left Sidebar Column -->
-        <aside id="sidebarColumn" class="md:col-span-4 lg:col-span-3 flex flex-col gap-4">
+        <aside id="sidebarColumn" aria-hidden="true" class="md:col-span-4 lg:col-span-3 flex flex-col gap-4">
             
             <!-- Persona Card -->
             <div class="bg-sage-800 text-cream-100 rounded-3xl p-5 shadow-sm border border-sage-900/10 flex flex-col items-center text-center">
@@ -190,7 +202,7 @@
                     <span id="bookmarkCount" class="text-[10px] bg-sage-200 text-sage-800 px-2 py-0.5 rounded-full">0</span>
                 </div>
                 <div id="bookmarksList" class="max-h-36 overflow-y-auto custom-scrollbar space-y-1.5 text-xs text-sage-700">
-                    <p class="text-[11px] text-sage-500 italic p-1 text-center">Click bookmark icon next to any sentence to save it here.</p>
+                    <p class="text-[11px] text-sage-500 italic p-1 text-center">Click any sentence to open options to bookmark it.</p>
                 </div>
             </div>
 
@@ -264,7 +276,7 @@
                     <span>💡</span> Using Edge Read Aloud?
                 </div>
                 <p class="text-[11px] text-sage-200 leading-relaxed">
-                    Open Edge's menu <b>(...)</b> $\rightarrow$ <b>Read Aloud</b> and select <b>Sonia (Natural - UK)</b>. Use <b>Edge Read Focus</b> mode at the top for clean, unformatted text!
+                    Open Edge's menu <b>(...)</b> $\rightarrow$ <b>Read Aloud</b> and select <b>Sonia (Natural - UK)</b>. Tap <b>Edge Read Focus</b> at the top for zero-clutter continuous text!
                 </p>
             </div>
 
@@ -282,7 +294,7 @@
                      ondragleave="this.classList.remove('border-sage-600', 'bg-cream-200')"
                      ondrop="handleDrop(event)">
                     
-                    <div class="w-16 h-16 rounded-2xl bg-cream-200 border border-cream-300 flex items-center justify-center text-sage-700 shadow-sm mb-3">
+                    <div class="w-16 h-16 rounded-2xl bg-cream-200 border border-cream-300 flex items-center justify-center text-sage-700 shadow-sm mb-3" aria-hidden="true">
                         <i data-lucide="file-text" class="w-8 h-8"></i>
                     </div>
                     <h2 class="font-serif text-2xl font-bold text-sage-900 mb-1">drop your pdf file here</h2>
@@ -293,8 +305,8 @@
                     </label>
                 </div>
 
-                <!-- Document Header -->
-                <div class="flex items-center justify-between border-b border-cream-200 pb-3 mb-4 text-xs">
+                <!-- Document Header (aria-hidden so Read Aloud skips title/copy buttons) -->
+                <div aria-hidden="true" class="flex items-center justify-between border-b border-cream-200 pb-3 mb-4 text-xs">
                     <div class="flex items-center space-x-2 truncate">
                         <i data-lucide="file" class="w-4 h-4 text-sage-600 shrink-0"></i>
                         <span id="docTitle" class="font-serif font-bold text-base text-sage-900 truncate">No file selected</span>
@@ -307,23 +319,23 @@
                     </div>
                 </div>
 
-                <!-- Extracted Text Container -->
+                <!-- Extracted Clean Text Container -->
                 <div id="readerContent" class="flex-1 overflow-y-auto max-h-[580px] pr-2 space-y-6 custom-scrollbar text-sage-900 leading-relaxed font-sans text-base">
                 </div>
 
                 <!-- Loading Overlay -->
-                <div id="loadingOverlay" class="hidden absolute inset-0 bg-cream-100/90 backdrop-blur-sm z-30 flex flex-col items-center justify-center text-center p-4">
+                <div id="loadingOverlay" aria-hidden="true" class="hidden absolute inset-0 bg-cream-100/90 backdrop-blur-sm z-30 flex flex-col items-center justify-center text-center p-4">
                     <div class="w-10 h-10 border-4 border-sage-300 border-t-sage-700 rounded-full animate-spin mb-3"></div>
                     <p id="loadingText" class="text-xs font-serif font-semibold text-sage-800">Reading PDF document...</p>
                 </div>
 
                 <!-- Page Navigator -->
-                <div id="pageQuickList" class="mt-4 pt-3 border-t border-cream-200 flex items-center gap-2 overflow-x-auto custom-scrollbar text-xs">
+                <div id="pageQuickList" aria-hidden="true" class="mt-4 pt-3 border-t border-cream-200 flex items-center gap-2 overflow-x-auto custom-scrollbar text-xs">
                 </div>
             </div>
 
             <!-- Audio Controller Deck -->
-            <div id="audioDeck" class="bg-sage-800 text-cream-100 rounded-3xl p-4 sm:p-5 shadow-sm border border-sage-900/10 flex flex-col gap-3">
+            <div id="audioDeck" aria-hidden="true" class="bg-sage-800 text-cream-100 rounded-3xl p-4 sm:p-5 shadow-sm border border-sage-900/10 flex flex-col gap-3">
                 
                 <div class="w-full bg-sage-900/40 h-2 rounded-full overflow-hidden cursor-pointer" onclick="seekProgress(event)">
                     <div id="audioProgressBar" class="bg-cream-200 h-full w-0 transition-all duration-300"></div>
@@ -369,6 +381,7 @@
         let pdfDoc = null;
         let flatSentences = [];
         let currentSentenceIndex = -1;
+        let selectedSentenceObj = null;
         let isPlaying = false;
         let activeEngine = 'browser'; 
         let currentAudio = null;
@@ -546,7 +559,7 @@
                 updateFontDisplay();
 
                 const pageQuickList = document.getElementById('pageQuickList');
-                pageQuickList.innerHTML = '<span class="text-sage-600 text-[11px] font-serif mr-1 shrink-0">Jump to:</span>';
+                pageQuickList.innerHTML = '<span aria-hidden="true" class="text-sage-600 text-[11px] font-serif mr-1 shrink-0">Jump to:</span>';
 
                 for (let i = 1; i <= pdfDoc.numPages; i++) {
                     const page = await pdfDoc.getPage(i);
@@ -559,6 +572,7 @@
 
                     const pill = document.createElement('button');
                     pill.className = "px-2.5 py-1 rounded-xl bg-cream-200 hover:bg-cream-300 text-sage-800 text-[11px] font-medium shrink-0 transition";
+                    pill.setAttribute("aria-hidden", "true");
                     pill.textContent = `P. ${i}`;
                     pill.onclick = () => scrollToPage(i);
                     pageQuickList.appendChild(pill);
@@ -567,9 +581,11 @@
                     pageContainer.id = `pdf-page-${i}`;
                     pageContainer.className = "border-b border-cream-200/80 pb-6 mb-6";
                     
+                    // Page indicator marker with aria-hidden so Read Aloud skips it
                     const pageHeader = document.createElement('div');
                     pageHeader.className = "text-xs font-serif font-bold text-sage-600 mb-3 tracking-wide uppercase flex items-center justify-between";
-                    pageHeader.innerHTML = `<span>🌱 Page ${i}</span> <button onclick="scrollToPage(${i})" class="text-[10px] hover:underline font-sans normal-case text-sage-500">Jump here</button>`;
+                    pageHeader.setAttribute("aria-hidden", "true");
+                    pageHeader.innerHTML = `<span>Page ${i}</span> <button onclick="scrollToPage(${i})" class="text-[10px] hover:underline font-sans normal-case text-sage-500">Jump here</button>`;
                     pageContainer.appendChild(pageHeader);
 
                     const paragraphEl = document.createElement('p');
@@ -582,28 +598,19 @@
                         const sObj = { id: globalIndex, pageNum: i, text: trimmed };
                         flatSentences.push(sObj);
 
-                        const sentenceWrap = document.createElement('span');
-                        sentenceWrap.className = "inline group hover:bg-cream-300/60 rounded px-0.5 transition cursor-pointer relative";
-
+                        // Pure sentence span with NO extra embedded buttons/emojis
                         const span = document.createElement('span');
                         span.id = `sentence-${globalIndex}`;
+                        span.className = "hover:bg-cream-300/60 rounded px-0.5 transition cursor-pointer inline";
                         span.textContent = trimmed + " ";
                         const sIdx = globalIndex;
-                        span.onclick = () => playSentenceIndex(sIdx);
 
-                        // Quick Bookmark Button on sentence hover
-                        const bkmBtn = document.createElement('button');
-                        bkmBtn.className = "opacity-0 group-hover:opacity-100 text-[10px] text-sage-500 hover:text-sage-800 px-1 transition inline-block";
-                        bkmBtn.title = "Bookmark sentence";
-                        bkmBtn.innerHTML = "🔖";
-                        bkmBtn.onclick = (e) => {
-                            e.stopPropagation();
-                            addBookmark(i, trimmed);
+                        span.onclick = (e) => {
+                            playSentenceIndex(sIdx);
+                            showSentenceToolbar(e, sObj);
                         };
 
-                        sentenceWrap.appendChild(span);
-                        sentenceWrap.appendChild(bkmBtn);
-                        paragraphEl.appendChild(sentenceWrap);
+                        paragraphEl.appendChild(span);
                         globalIndex++;
                     });
 
@@ -628,6 +635,45 @@
                 console.error("PDF Error:", err);
                 showLoading(false);
                 alert("Unable to parse PDF file.");
+            }
+        }
+
+        // Show floating contextual toolbar when selecting a sentence
+        function showSentenceToolbar(e, sObj) {
+            selectedSentenceObj = sObj;
+            const toolbar = document.getElementById('sentenceToolbar');
+            if (!toolbar) return;
+
+            const rect = e.target.getBoundingClientRect();
+            toolbar.style.left = `${rect.left + (rect.width / 2)}px`;
+            toolbar.style.top = `${rect.top + window.scrollY - 8}px`;
+            toolbar.classList.remove('hidden');
+        }
+
+        function hideSentenceToolbar() {
+            const toolbar = document.getElementById('sentenceToolbar');
+            if (toolbar) toolbar.classList.add('hidden');
+        }
+
+        function bookmarkCurrentSelectedSentence() {
+            if (selectedSentenceObj) {
+                addBookmark(selectedSentenceObj.pageNum, selectedSentenceObj.text);
+                hideSentenceToolbar();
+            }
+        }
+
+        function copyCurrentSentenceText() {
+            if (selectedSentenceObj) {
+                const tempInput = document.createElement('textarea');
+                tempInput.value = selectedSentenceObj.text;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+
+                updateStatus("sentence copied!");
+                setTimeout(() => updateStatus("ready"), 1500);
+                hideSentenceToolbar();
             }
         }
 
