@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cozy PDF Voice Reader</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        sage: {
+                            50: '#f4f5f1',
+                            100: '#e5e8df',
+                            200: '#cbd1c2',
+                            300: '#abb49f',
+                            400: '#8c977d',
+                            500: '#6f7a60',
+                            600: '#555e49',
+                            700: '#434b3a',
+                            800: '#353a2d',
+                            900: '#282c22',
+                            950: '#1a1d16',
+                        },
+                        cream: {
+                            50: '#fcfbf9',
+                            100: '#f7f4ee',
+                            200: '#eae6dd',
+                            300: '#ded7c9',
+                            400: '#cdbfab',
+                        }
+                    },
+                    fontFamily: {
+                        serif: ['"Cormorant Garamond"', 'Georgia', 'serif'],
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- PDF.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <style>
+        body {
+            background-color: #cbd1c2;
+            color: #282c22;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        /* Theme Overrides */
+        body.theme-sepia {
+            background-color: #e8dfd1;
+            color: #3b2f2f;
+        }
+        body.theme-sepia .bg-cream-100 { background-color: #f7f0e6; }
+        body.theme-sepia .bg-cream-200 { background-color: #ebdcd0; }
+
+        body.theme-night {
+            background-color: #1e241e;
+            color: #dcd7cd;
+        }
+        body.theme-night .bg-cream-100 { background-color: #283028; border-color: #384438; }
+        body.theme-night .bg-cream-200 { background-color: #323d32; }
+        body.theme-night .text-sage-900 { color: #ece8e1; }
+        body.theme-night .text-sage-800 { color: #ded8ce; }
+        body.theme-night .text-sage-700 { color: #bab2a4; }
+
+        .active-sentence {
+            background-color: rgba(111, 122, 96, 0.35);
+            border-radius: 6px;
+            box-shadow: 0 1px 4px rgba(67, 75, 58, 0.15);
+            transition: all 0.2s ease-in-out;
+            color: #1a1d16;
+            font-weight: 600;
+        }
+        body.theme-night .active-sentence {
+            background-color: rgba(186, 198, 168, 0.3);
+            color: #ffffff;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(234, 230, 221, 0.5);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #8c977d;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #6f7a60;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans antialiased p-2 sm:p-4 lg:p-6">
+
+    <!-- Top Floating Header Bar -->
+    <header class="max-w-7xl w-full mx-auto mb-4 bg-cream-100 rounded-3xl p-4 shadow-sm border border-cream-300/60 flex flex-wrap items-center justify-between gap-3">
+        
+        <div class="flex items-center space-x-3">
+            <div class="w-11 h-11 rounded-2xl bg-sage-700 text-cream-100 flex items-center justify-center font-serif text-xl font-medium shadow-sm">
+                🌿
+            </div>
+            <div>
+                <h1 class="font-serif font-bold text-xl sm:text-2xl text-sage-900 tracking-tight">
+                    cozy pdf reader
+                </h1>
+                <p class="text-xs text-sage-600 font-serif italic">transcription & reading focus 🌱</p>
+            </div>
+        </div>
+
+        <!-- Mode Toggle, Focus Mode & Theme Selector -->
+        <div class="flex items-center flex-wrap gap-2 sm:gap-3">
+            <!-- Focus Mode Button (Optimized for Edge Read Aloud) -->
+            <button id="focusModeBtn" onclick="toggleFocusMode()" class="px-3 py-1.5 rounded-2xl text-xs font-semibold bg-cream-200 hover:bg-cream-300 text-sage-800 flex items-center gap-1.5 transition">
+                <i data-lucide="book-open" class="w-3.5 h-3.5 text-sage-700"></i>
+                <span id="focusModeText">Edge Read Focus</span>
+            </button>
+
+            <!-- Text Formatting Adjusters -->
+            <div class="flex items-center bg-cream-200/80 rounded-2xl p-1 border border-cream-300 text-xs text-sage-800">
+                <button onclick="changeFontSize(-1)" class="px-2 py-1 hover:bg-cream-300 rounded-xl font-bold" title="Smaller font">A-</button>
+                <span id="fontSizeDisplay" class="px-1.5 text-[11px] font-mono">16px</span>
+                <button onclick="changeFontSize(1)" class="px-2 py-1 hover:bg-cream-300 rounded-xl font-bold" title="Larger font">A+</button>
+            </div>
+
+            <!-- Theme Selector -->
+            <select id="themeSelect" onchange="applyTheme(this.value)" class="bg-cream-200 text-sage-900 border border-cream-300 rounded-2xl px-2.5 py-1.5 text-xs font-medium outline-none cursor-pointer">
+                <option value="sage">🍃 Cozy Sage</option>
+                <option value="sepia">📜 Warm Sepia</option>
+                <option value="night">🌙 Night Mode</option>
+            </select>
+
+            <label class="cursor-pointer bg-sage-700 hover:bg-sage-800 text-cream-100 px-4 py-2 rounded-2xl text-xs font-semibold flex items-center space-x-2 transition shadow-sm">
+                <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+                <span class="hidden sm:inline">Upload PDF</span>
+                <input type="file" id="pdfFileInput" accept="application/pdf" class="hidden" onchange="handleFileSelect(event)">
+            </label>
+        </div>
+    </header>
+
+    <!-- Resume Progress Toast Banner -->
+    <div id="resumeBanner" class="max-w-7xl w-full mx-auto mb-4 hidden bg-sage-700 text-cream-100 p-3 px-5 rounded-2xl shadow-sm flex items-center justify-between text-xs transition-all">
+        <div class="flex items-center gap-2">
+            <i data-lucide="bookmark-check" class="w-4 h-4 text-cream-200"></i>
+            <span>Resume where you left off in <b id="resumeDocName">Document</b> (Page <span id="resumePageNum">1</span>)?</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <button onclick="confirmResume()" class="bg-cream-100 hover:bg-cream-50 text-sage-900 font-bold px-3 py-1 rounded-xl shadow-xs transition">Jump to Page</button>
+            <button onclick="dismissResume()" class="text-sage-300 hover:text-cream-100 p-1"><i data-lucide="x" class="w-4 h-4"></i></button>
+        </div>
+    </div>
+
+    <!-- Main Grid Layout -->
+    <div class="max-w-7xl w-full mx-auto flex-1 grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
+        
+        <!-- Left Sidebar Column -->
+        <aside id="sidebarColumn" class="md:col-span-4 lg:col-span-3 flex flex-col gap-4">
+            
+            <!-- Persona Card -->
+            <div class="bg-sage-800 text-cream-100 rounded-3xl p-5 shadow-sm border border-sage-900/10 flex flex-col items-center text-center">
+                <div class="w-16 h-16 rounded-full bg-cream-200 p-1 mb-3 shadow-md">
+                    <div class="w-full h-full rounded-full bg-sage-600 flex items-center justify-center text-2xl">
+                        📖
+                    </div>
+                </div>
+                <h2 class="font-serif text-2xl font-semibold tracking-tight text-cream-100">hello, reader</h2>
+                <p class="font-serif italic text-xs text-sage-300 mt-0.5">clean text transcription & audio reader</p>
+                <div class="w-12 h-px bg-sage-600 my-3"></div>
+
+                <div id="savedPositionBadge" class="text-[11px] text-sage-200 bg-sage-700/60 px-3 py-1.5 rounded-xl border border-sage-600/50 w-full text-center">
+                    <span>No saved progress yet</span>
+                </div>
+            </div>
+
+            <!-- Bookmarks Panel -->
+            <div class="bg-cream-100 rounded-3xl p-4 shadow-sm border border-cream-300/80 space-y-2">
+                <div class="flex items-center justify-between text-xs font-semibold text-sage-800 border-b border-cream-200 pb-2">
+                    <span class="flex items-center gap-1.5 font-serif text-sm text-sage-900 font-bold">
+                        <i data-lucide="bookmark" class="w-3.5 h-3.5 text-sage-600"></i> saved bookmarks
+                    </span>
+                    <span id="bookmarkCount" class="text-[10px] bg-sage-200 text-sage-800 px-2 py-0.5 rounded-full">0</span>
+                </div>
+                <div id="bookmarksList" class="max-h-36 overflow-y-auto custom-scrollbar space-y-1.5 text-xs text-sage-700">
+                    <p class="text-[11px] text-sage-500 italic p-1 text-center">Click bookmark icon next to any sentence to save it here.</p>
+                </div>
+            </div>
+
+            <!-- Voice Controls Card -->
+            <div class="bg-cream-100 rounded-3xl p-4 shadow-sm border border-cream-300/80 space-y-3">
+                <div class="flex items-center justify-between text-xs font-semibold text-sage-800 border-b border-cream-200 pb-2">
+                    <span class="flex items-center gap-1.5 font-serif text-sm text-sage-900 font-bold">
+                        <i data-lucide="sliders" class="w-3.5 h-3.5 text-sage-600"></i> voice settings
+                    </span>
+                    <span id="activeEngineBadge" class="px-2 py-0.5 rounded-full text-[10px] bg-sage-200 text-sage-800 font-medium">Free Built-in Voice</span>
+                </div>
+
+                <!-- Engine Switcher Buttons -->
+                <div class="bg-cream-200/80 p-1 rounded-2xl border border-cream-300 flex items-center text-xs">
+                    <button id="engineBrowserBtn" onclick="switchEngine('browser')" class="w-1/2 py-1.5 rounded-xl font-medium transition-all flex items-center justify-center space-x-1 bg-sage-700 text-cream-100 shadow-sm">
+                        <i data-lucide="volume-2" class="w-3 h-3"></i>
+                        <span>Browser</span>
+                    </button>
+                    <button id="engineGeminiBtn" onclick="switchEngine('gemini')" class="w-1/2 py-1.5 rounded-xl font-medium transition-all text-sage-700 hover:text-sage-900 flex items-center justify-center space-x-1">
+                        <i data-lucide="sparkles" class="w-3 h-3"></i>
+                        <span>Gemini AI</span>
+                    </button>
+                </div>
+
+                <!-- Browser Native Voice Selector -->
+                <div id="browserVoiceContainer" class="space-y-1">
+                    <label class="text-[11px] text-sage-700 font-medium">choose browser voice</label>
+                    <select id="browserVoiceSelect" class="w-full bg-cream-50 border border-cream-300 rounded-xl px-2.5 py-1.5 text-xs text-sage-900 focus:ring-1 focus:ring-sage-500 outline-none">
+                        <option value="">Detecting device voices...</option>
+                    </select>
+                </div>
+
+                <!-- Optional Gemini AI Key Section -->
+                <div id="geminiVoiceContainer" class="space-y-2 hidden">
+                    <div class="p-2.5 bg-cream-200/60 rounded-xl border border-cream-300 text-[11px] text-sage-800 space-y-1.5">
+                        <div class="flex items-center justify-between font-medium">
+                            <span>Optional Gemini Key</span>
+                            <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" class="text-sage-700 hover:underline font-bold text-[10px] flex items-center gap-0.5">
+                                Get Free Key <i data-lucide="external-link" class="w-2.5 h-2.5"></i>
+                            </a>
+                        </div>
+                        <input type="password" id="customApiKeyInput" placeholder="Paste free AIzaSy... key" onchange="saveApiKey(this.value)" class="w-full bg-cream-50 border border-cream-300 rounded-lg px-2 py-1 text-xs text-sage-900 outline-none">
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="text-[11px] text-sage-600 font-medium">gemini voice persona</label>
+                        <select id="geminiVoiceSelect" class="w-full bg-cream-50 border border-cream-300 rounded-xl px-2.5 py-1.5 text-xs text-sage-900 outline-none">
+                            <option value="Kore" selected>Kore (Clear & Natural)</option>
+                            <option value="Zephyr">Zephyr (Warm & Conversational)</option>
+                            <option value="Aoede">Aoede (Soft & Melodic)</option>
+                            <option value="Puck">Puck (Dynamic & Lively)</option>
+                            <option value="Fenrir">Fenrir (Deep & Expressive)</option>
+                            <option value="Leda">Leda (Calm & Articulate)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Speed Control -->
+                <div class="space-y-1 pt-1">
+                    <div class="flex justify-between items-center text-[11px] text-sage-700">
+                        <span>reading speed</span>
+                        <span id="speedVal" class="text-sage-900 font-bold">1.0x</span>
+                    </div>
+                    <input type="range" id="speedSlider" min="0.75" max="1.75" step="0.1" value="1.0" oninput="updateSpeedVal(this.value)" class="w-full accent-sage-600 h-1.5 bg-cream-300 rounded-lg appearance-none cursor-pointer">
+                </div>
+            </div>
+
+            <!-- Edge Read Aloud Tip Banner -->
+            <div class="bg-sage-700 text-cream-100 rounded-3xl p-4 shadow-sm flex flex-col space-y-2 text-xs">
+                <div class="flex items-center gap-1.5 font-bold font-serif text-sm">
+                    <span>💡</span> Using Edge Read Aloud?
+                </div>
+                <p class="text-[11px] text-sage-200 leading-relaxed">
+                    Open Edge's menu <b>(...)</b> $\rightarrow$ <b>Read Aloud</b> and select <b>Sonia (Natural - UK)</b>. Use <b>Edge Read Focus</b> mode at the top for clean, unformatted text!
+                </p>
+            </div>
+
+        </aside>
+
+        <!-- Right Main Column -->
+        <main id="mainColumn" class="md:col-span-8 lg:col-span-9 flex flex-col gap-4 transition-all">
+            
+            <!-- Document Display -->
+            <div class="bg-cream-100 rounded-3xl p-5 sm:p-7 shadow-sm border border-cream-300/80 min-h-[500px] flex flex-col relative overflow-hidden">
+                
+                <!-- Drop Zone -->
+                <div id="dropZone" class="absolute inset-0 bg-cream-100/95 backdrop-blur-sm z-20 flex flex-col items-center justify-center p-6 text-center border-2 border-dashed border-sage-300 rounded-3xl transition-all"
+                     ondragover="event.preventDefault(); this.classList.add('border-sage-600', 'bg-cream-200')"
+                     ondragleave="this.classList.remove('border-sage-600', 'bg-cream-200')"
+                     ondrop="handleDrop(event)">
+                    
+                    <div class="w-16 h-16 rounded-2xl bg-cream-200 border border-cream-300 flex items-center justify-center text-sage-700 shadow-sm mb-3">
+                        <i data-lucide="file-text" class="w-8 h-8"></i>
+                    </div>
+                    <h2 class="font-serif text-2xl font-bold text-sage-900 mb-1">drop your pdf file here</h2>
+                    <p class="text-sage-600 text-xs max-w-sm mb-6 font-serif italic">transcribes PDF text into clean readable format & remembers your reading page automatically.</p>
+                    <label class="bg-sage-700 hover:bg-sage-800 text-cream-100 font-medium text-xs px-5 py-2.5 rounded-2xl cursor-pointer shadow-sm transition flex items-center gap-2">
+                        <i data-lucide="folder-open" class="w-4 h-4"></i> Choose PDF File
+                        <input type="file" accept="application/pdf" class="hidden" onchange="handleFileSelect(event)">
+                    </label>
+                </div>
+
+                <!-- Document Header -->
+                <div class="flex items-center justify-between border-b border-cream-200 pb-3 mb-4 text-xs">
+                    <div class="flex items-center space-x-2 truncate">
+                        <i data-lucide="file" class="w-4 h-4 text-sage-600 shrink-0"></i>
+                        <span id="docTitle" class="font-serif font-bold text-base text-sage-900 truncate">No file selected</span>
+                    </div>
+                    <div class="flex items-center space-x-2 text-sage-600 shrink-0">
+                        <button onclick="copyCleanText()" class="px-2.5 py-1 bg-cream-200 hover:bg-cream-300 rounded-xl text-[11px] font-medium flex items-center gap-1 transition" title="Copy clean transcript">
+                            <i data-lucide="copy" class="w-3 h-3"></i> Copy Text
+                        </button>
+                        <span id="pageIndicator" class="bg-cream-200 px-3 py-1 rounded-xl font-medium text-[11px]">Page 0 of 0</span>
+                    </div>
+                </div>
+
+                <!-- Extracted Text Container -->
+                <div id="readerContent" class="flex-1 overflow-y-auto max-h-[580px] pr-2 space-y-6 custom-scrollbar text-sage-900 leading-relaxed font-sans text-base">
+                </div>
+
+                <!-- Loading Overlay -->
+                <div id="loadingOverlay" class="hidden absolute inset-0 bg-cream-100/90 backdrop-blur-sm z-30 flex flex-col items-center justify-center text-center p-4">
+                    <div class="w-10 h-10 border-4 border-sage-300 border-t-sage-700 rounded-full animate-spin mb-3"></div>
+                    <p id="loadingText" class="text-xs font-serif font-semibold text-sage-800">Reading PDF document...</p>
+                </div>
+
+                <!-- Page Navigator -->
+                <div id="pageQuickList" class="mt-4 pt-3 border-t border-cream-200 flex items-center gap-2 overflow-x-auto custom-scrollbar text-xs">
+                </div>
+            </div>
+
+            <!-- Audio Controller Deck -->
+            <div id="audioDeck" class="bg-sage-800 text-cream-100 rounded-3xl p-4 sm:p-5 shadow-sm border border-sage-900/10 flex flex-col gap-3">
+                
+                <div class="w-full bg-sage-900/40 h-2 rounded-full overflow-hidden cursor-pointer" onclick="seekProgress(event)">
+                    <div id="audioProgressBar" class="bg-cream-200 h-full w-0 transition-all duration-300"></div>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <div class="text-[11px] text-sage-300 font-mono w-28">
+                        <span id="currentTimeDisplay">0% read</span>
+                    </div>
+
+                    <!-- Player Controls -->
+                    <div class="flex items-center space-x-3">
+                        <button onclick="prevSentence()" title="Previous sentence" class="p-2 text-sage-300 hover:text-cream-100 hover:bg-sage-700 rounded-xl transition">
+                            <i data-lucide="skip-back" class="w-4 h-4"></i>
+                        </button>
+                        
+                        <button id="playPauseBtn" onclick="togglePlayPause()" class="p-3.5 bg-cream-200 hover:bg-cream-100 text-sage-900 rounded-full shadow-md transition transform active:scale-95">
+                            <i data-lucide="play" class="w-5 h-5 fill-current"></i>
+                        </button>
+
+                        <button onclick="nextSentence()" title="Next sentence" class="p-2 text-sage-300 hover:text-cream-100 hover:bg-sage-700 rounded-xl transition">
+                            <i data-lucide="skip-forward" class="w-4 h-4"></i>
+                        </button>
+                        
+                        <button onclick="stopReading()" title="Stop" class="p-2 text-sage-300 hover:text-red-300 hover:bg-sage-700 rounded-xl transition">
+                            <i data-lucide="square" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+
+                    <div class="text-right w-36 truncate">
+                        <span id="statusIndicator" class="text-[11px] text-sage-300 font-serif italic">ready</span>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Script Logic -->
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        let pdfDoc = null;
+        let flatSentences = [];
+        let currentSentenceIndex = -1;
+        let isPlaying = false;
+        let activeEngine = 'browser'; 
+        let currentAudio = null;
+        let synth = window.speechSynthesis;
+        let browserUtterance = null;
+        let playbackSpeed = 1.0;
+        let storedApiKey = "";
+        let currentDocName = "";
+        let currentFontSize = 16;
+        let focusModeActive = false;
+        let bookmarks = [];
+
+        lucide.createIcons();
+
+        // Restore settings & reading position on startup
+        window.addEventListener('DOMContentLoaded', () => {
+            loadStoredSettings();
+            checkSavedProgress();
+        });
+
+        function loadStoredSettings() {
+            try {
+                storedApiKey = localStorage.getItem('cozy_gemini_key') || "";
+                if (storedApiKey) {
+                    const input = document.getElementById('customApiKeyInput');
+                    if (input) input.value = storedApiKey;
+                }
+
+                const savedTheme = localStorage.getItem('cozy_theme') || 'sage';
+                applyTheme(savedTheme, false);
+
+                const savedSize = localStorage.getItem('cozy_font_size');
+                if (savedSize) {
+                    currentFontSize = parseInt(savedSize, 10);
+                    updateFontDisplay();
+                }
+
+                const savedBkm = localStorage.getItem('cozy_bookmarks');
+                if (savedBkm) {
+                    bookmarks = JSON.parse(savedBkm);
+                    renderBookmarks();
+                }
+            } catch(e){}
+        }
+
+        function saveApiKey(val) {
+            storedApiKey = val.trim();
+            try {
+                localStorage.setItem('cozy_gemini_key', storedApiKey);
+            } catch(e){}
+        }
+
+        function applyTheme(themeName, save = true) {
+            document.body.className = `min-h-screen flex flex-col font-sans antialiased p-2 sm:p-4 lg:p-6 theme-${themeName}`;
+            document.getElementById('themeSelect').value = themeName;
+            if (save) {
+                try { localStorage.setItem('cozy_theme', themeName); } catch(e){}
+            }
+        }
+
+        function changeFontSize(delta) {
+            currentFontSize = Math.max(12, Math.min(26, currentFontSize + delta));
+            updateFontDisplay();
+            try { localStorage.setItem('cozy_font_size', currentFontSize); } catch(e){}
+        }
+
+        function updateFontDisplay() {
+            document.getElementById('fontSizeDisplay').textContent = `${currentFontSize}px`;
+            const container = document.getElementById('readerContent');
+            if (container) {
+                container.style.fontSize = `${currentFontSize}px`;
+            }
+        }
+
+        function toggleFocusMode() {
+            focusModeActive = !focusModeActive;
+            const sidebar = document.getElementById('sidebarColumn');
+            const main = document.getElementById('mainColumn');
+            const focusBtnText = document.getElementById('focusModeText');
+
+            if (focusModeActive) {
+                sidebar.classList.add('hidden');
+                main.className = "col-span-12 flex flex-col gap-4";
+                focusBtnText.textContent = "Exit Focus Mode";
+            } else {
+                sidebar.classList.remove('hidden');
+                main.className = "md:col-span-8 lg:col-span-9 flex flex-col gap-4 transition-all";
+                focusBtnText.textContent = "Edge Read Focus";
+            }
+        }
+
+        function checkSavedProgress() {
+            try {
+                const raw = localStorage.getItem('cozy_reading_progress');
+                if (!raw) return;
+                const prog = JSON.parse(raw);
+                if (prog && prog.docName) {
+                    document.getElementById('resumeDocName').textContent = prog.docName;
+                    document.getElementById('resumePageNum').textContent = prog.pageNum || 1;
+                    document.getElementById('resumeBanner').classList.remove('hidden');
+                    
+                    document.getElementById('savedPositionBadge').innerHTML = `
+                        <div class="text-[11px] font-semibold text-cream-100">Saved: ${prog.docName}</div>
+                        <div class="text-[10px] text-sage-300">Page ${prog.pageNum || 1} • ${prog.progressPercent || 0}% read</div>
+                    `;
+                }
+            } catch(e){}
+        }
+
+        function saveReadingProgress(pageNum, sentenceIdx) {
+            if (!currentDocName) return;
+            const percent = flatSentences.length > 0 ? Math.round(((sentenceIdx + 1) / flatSentences.length) * 100) : 0;
+            const data = {
+                docName: currentDocName,
+                pageNum: pageNum,
+                sentenceIndex: sentenceIdx,
+                progressPercent: percent,
+                timestamp: Date.now()
+            };
+            try {
+                localStorage.setItem('cozy_reading_progress', JSON.stringify(data));
+                document.getElementById('savedPositionBadge').innerHTML = `
+                    <div class="text-[11px] font-semibold text-cream-100">Saved: ${currentDocName}</div>
+                    <div class="text-[10px] text-sage-300">Page ${pageNum} • ${percent}% read</div>
+                `;
+            } catch(e){}
+        }
+
+        function confirmResume() {
+            dismissResume();
+            try {
+                const raw = localStorage.getItem('cozy_reading_progress');
+                if (!raw) return;
+                const prog = JSON.parse(raw);
+                if (prog.pageNum) scrollToPage(prog.pageNum);
+                if (prog.sentenceIndex !== undefined && prog.sentenceIndex >= 0) {
+                    currentSentenceIndex = prog.sentenceIndex;
+                    highlightSentence(prog.sentenceIndex);
+                    scrollToSentence(prog.sentenceIndex);
+                }
+            } catch(e){}
+        }
+
+        function dismissResume() {
+            document.getElementById('resumeBanner').classList.add('hidden');
+        }
+
+        // Clean hyphenated word breaks & redundant whitespace across PDF pages
+        function cleanPDFText(text) {
+            if (!text) return "";
+            return text
+                .replace(/(\w+)-\s*[\r\n]+\s*(\w+)/g, '$1$2') // Fix "word- \n ing" => "wording"
+                .replace(/[\r\n]+/g, ' ')
+                .replace(/\s+/g, ' ')
+                .replace(/[^\x20-\x7E\u00A0-\u00FF]/g, '')
+                .trim();
+        }
+
+        async function processPDFFile(file) {
+            showLoading(true, "Transcribing & cleaning PDF text...");
+            currentDocName = file.name;
+            document.getElementById('docTitle').textContent = file.name;
+
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                
+                document.getElementById('pageIndicator').textContent = `Page 1 of ${pdfDoc.numPages}`;
+
+                flatSentences = [];
+                let globalIndex = 0;
+
+                const readerContent = document.getElementById('readerContent');
+                readerContent.innerHTML = '';
+                updateFontDisplay();
+
+                const pageQuickList = document.getElementById('pageQuickList');
+                pageQuickList.innerHTML = '<span class="text-sage-600 text-[11px] font-serif mr-1 shrink-0">Jump to:</span>';
+
+                for (let i = 1; i <= pdfDoc.numPages; i++) {
+                    const page = await pdfDoc.getPage(i);
+                    const textContent = await page.getTextContent();
+                    
+                    let pageRawText = textContent.items.map(item => item.str).join(' ');
+                    pageRawText = pageRawText.replace(/\s+/g, ' ').trim();
+
+                    const rawSentences = pageRawText.match(/[^.!?]+[.!?]+(\s|$)|[^.!?]+$/g) || [pageRawText];
+
+                    const pill = document.createElement('button');
+                    pill.className = "px-2.5 py-1 rounded-xl bg-cream-200 hover:bg-cream-300 text-sage-800 text-[11px] font-medium shrink-0 transition";
+                    pill.textContent = `P. ${i}`;
+                    pill.onclick = () => scrollToPage(i);
+                    pageQuickList.appendChild(pill);
+
+                    const pageContainer = document.createElement('div');
+                    pageContainer.id = `pdf-page-${i}`;
+                    pageContainer.className = "border-b border-cream-200/80 pb-6 mb-6";
+                    
+                    const pageHeader = document.createElement('div');
+                    pageHeader.className = "text-xs font-serif font-bold text-sage-600 mb-3 tracking-wide uppercase flex items-center justify-between";
+                    pageHeader.innerHTML = `<span>🌱 Page ${i}</span> <button onclick="scrollToPage(${i})" class="text-[10px] hover:underline font-sans normal-case text-sage-500">Jump here</button>`;
+                    pageContainer.appendChild(pageHeader);
+
+                    const paragraphEl = document.createElement('p');
+                    paragraphEl.className = "leading-relaxed text-sage-900 font-sans";
+
+                    rawSentences.forEach((sentenceText) => {
+                        const trimmed = cleanPDFText(sentenceText);
+                        if (!trimmed || trimmed.length < 2) return;
+
+                        const sObj = { id: globalIndex, pageNum: i, text: trimmed };
+                        flatSentences.push(sObj);
+
+                        const sentenceWrap = document.createElement('span');
+                        sentenceWrap.className = "inline group hover:bg-cream-300/60 rounded px-0.5 transition cursor-pointer relative";
+
+                        const span = document.createElement('span');
+                        span.id = `sentence-${globalIndex}`;
+                        span.textContent = trimmed + " ";
+                        const sIdx = globalIndex;
+                        span.onclick = () => playSentenceIndex(sIdx);
+
+                        // Quick Bookmark Button on sentence hover
+                        const bkmBtn = document.createElement('button');
+                        bkmBtn.className = "opacity-0 group-hover:opacity-100 text-[10px] text-sage-500 hover:text-sage-800 px-1 transition inline-block";
+                        bkmBtn.title = "Bookmark sentence";
+                        bkmBtn.innerHTML = "🔖";
+                        bkmBtn.onclick = (e) => {
+                            e.stopPropagation();
+                            addBookmark(i, trimmed);
+                        };
+
+                        sentenceWrap.appendChild(span);
+                        sentenceWrap.appendChild(bkmBtn);
+                        paragraphEl.appendChild(sentenceWrap);
+                        globalIndex++;
+                    });
+
+                    pageContainer.appendChild(paragraphEl);
+                    readerContent.appendChild(pageContainer);
+                }
+
+                document.getElementById('dropZone').classList.add('hidden');
+                showLoading(false);
+                updateStatus("ready");
+
+                // Auto check if we have saved progress for this exact document
+                const raw = localStorage.getItem('cozy_reading_progress');
+                if (raw) {
+                    const prog = JSON.parse(raw);
+                    if (prog.docName === file.name) {
+                        confirmResume();
+                    }
+                }
+
+            } catch (err) {
+                console.error("PDF Error:", err);
+                showLoading(false);
+                alert("Unable to parse PDF file.");
+            }
+        }
+
+        function addBookmark(pageNum, text) {
+            const snippet = text.length > 50 ? text.substring(0, 50) + "..." : text;
+            bookmarks.unshift({ pageNum, snippet, timestamp: Date.now() });
+            if (bookmarks.length > 20) bookmarks.pop();
+            try { localStorage.setItem('cozy_bookmarks', JSON.stringify(bookmarks)); } catch(e){}
+            renderBookmarks();
+        }
+
+        function renderBookmarks() {
+            const list = document.getElementById('bookmarksList');
+            const count = document.getElementById('bookmarkCount');
+            if (!list) return;
+            count.textContent = bookmarks.length;
+
+            if (bookmarks.length === 0) {
+                list.innerHTML = `<p class="text-[11px] text-sage-500 italic p-1 text-center">Click bookmark icon next to any sentence to save it here.</p>`;
+                return;
+            }
+
+            list.innerHTML = '';
+            bookmarks.forEach((b, idx) => {
+                const item = document.createElement('div');
+                item.className = "p-2 bg-cream-50 hover:bg-cream-200 rounded-xl border border-cream-300 flex items-center justify-between gap-2 cursor-pointer transition";
+                item.onclick = () => scrollToPage(b.pageNum);
+                item.innerHTML = `
+                    <div class="truncate">
+                        <span class="font-bold text-sage-900 text-[10px]">P. ${b.pageNum}</span>
+                        <p class="text-[11px] text-sage-700 truncate">${b.snippet}</p>
+                    </div>
+                    <button onclick="event.stopPropagation(); removeBookmark(${idx})" class="text-sage-400 hover:text-red-500 text-xs p-1">✕</button>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function removeBookmark(idx) {
+            bookmarks.splice(idx, 1);
+            try { localStorage.setItem('cozy_bookmarks', JSON.stringify(bookmarks)); } catch(e){}
+            renderBookmarks();
+        }
+
+        function copyCleanText() {
+            if (flatSentences.length === 0) {
+                alert("No transcript text loaded yet.");
+                return;
+            }
+            const fullText = flatSentences.map(s => s.text).join(' ');
+            
+            // Clipboard fallback as specified
+            const tempInput = document.createElement('textarea');
+            tempInput.value = fullText;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+
+            updateStatus("copied to clipboard!");
+            setTimeout(() => updateStatus("ready"), 2000);
+        }
+
+        function scrollToPage(pageNum) {
+            const pageEl = document.getElementById(`pdf-page-${pageNum}`);
+            if (pageEl) {
+                pageEl.scrollIntoView({ behavior: 'smooth' });
+                document.getElementById('pageIndicator').textContent = `Page ${pageNum} of ${pdfDoc.numPages}`;
+            }
+        }
+
+        function highlightSentence(id) {
+            clearHighlights();
+            const el = document.getElementById(`sentence-${id}`);
+            if (el) {
+                el.classList.add('active-sentence');
+            }
+
+            if (flatSentences.length > 0) {
+                const percent = ((id + 1) / flatSentences.length) * 100;
+                updateProgressBar(percent);
+                
+                // Auto save reading position
+                const currentItem = flatSentences[id];
+                if (currentItem) {
+                    saveReadingProgress(currentItem.pageNum, id);
+                }
+            }
+        }
+
+        // Voice Engine Switcher & browser voice loader functions
+        function loadBrowserVoices() {
+            if (!synth) return;
+            const voices = synth.getVoices();
+            const select = document.getElementById('browserVoiceSelect');
+            if (!select) return;
+            select.innerHTML = '';
+            
+            if (voices.length === 0) {
+                select.innerHTML = '<option value="">Standard System Voice</option>';
+                return;
+            }
+
+            const sortedVoices = [...voices].sort((a, b) => {
+                const aName = a.name.toLowerCase();
+                const bName = b.name.toLowerCase();
+                if (aName.includes('natural') || aName.includes('google') || aName.includes('premium')) return -1;
+                if (bName.includes('natural') || bName.includes('google') || bName.includes('premium')) return 1;
+                return 0;
+            });
+
+            sortedVoices.forEach((voice, i) => {
+                const opt = document.createElement('option');
+                opt.value = i;
+                opt.textContent = `${voice.name} (${voice.lang})`;
+                if (i === 0) opt.selected = true;
+                select.appendChild(opt);
+            });
+        }
+
+        if (synth) {
+            loadBrowserVoices();
+            if (speechSynthesis.onvoiceschanged !== undefined) {
+                speechSynthesis.onvoiceschanged = loadBrowserVoices;
+            }
+        }
+
+        function switchEngine(engine) {
+            activeEngine = engine;
+            const geminiBtn = document.getElementById('engineGeminiBtn');
+            const browserBtn = document.getElementById('engineBrowserBtn');
+            const geminiContainer = document.getElementById('geminiVoiceContainer');
+            const browserContainer = document.getElementById('browserVoiceContainer');
+            const badge = document.getElementById('activeEngineBadge');
+
+            if (engine === 'gemini') {
+                geminiBtn.className = "w-1/2 py-1.5 rounded-xl font-medium transition-all flex items-center justify-center space-x-1 bg-sage-700 text-cream-100 shadow-sm";
+                browserBtn.className = "w-1/2 py-1.5 rounded-xl font-medium transition-all text-sage-700 hover:text-sage-900 flex items-center justify-center space-x-1";
+                geminiContainer.classList.remove('hidden');
+                browserContainer.classList.add('hidden');
+                badge.textContent = "Gemini AI Neural";
+            } else {
+                browserBtn.className = "w-1/2 py-1.5 rounded-xl font-medium transition-all flex items-center justify-center space-x-1 bg-sage-700 text-cream-100 shadow-sm";
+                geminiBtn.className = "w-1/2 py-1.5 rounded-xl font-medium transition-all text-sage-700 hover:text-sage-900 flex items-center justify-center space-x-1";
+                browserContainer.classList.remove('hidden');
+                geminiContainer.classList.add('hidden');
+                badge.textContent = "Free Built-in Voice";
+            }
+
+            if (isPlaying) stopReading();
+        }
+
+        function updateSpeedVal(val) {
+            playbackSpeed = parseFloat(val);
+            document.getElementById('speedVal').textContent = `${playbackSpeed.toFixed(1)}x`;
+            if (currentAudio) {
+                currentAudio.playbackRate = playbackSpeed;
+            }
+        }
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) processPDFFile(file);
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            document.getElementById('dropZone').classList.remove('border-sage-600', 'bg-cream-200');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type === 'application/pdf') {
+                processPDFFile(file);
+            }
+        }
+
+        function togglePlayPause() {
+            if (flatSentences.length === 0) return;
+
+            if (isPlaying) {
+                pauseReading();
+            } else {
+                if (currentSentenceIndex < 0) currentSentenceIndex = 0;
+                playSentenceIndex(currentSentenceIndex);
+            }
+        }
+
+        async function playSentenceIndex(index) {
+            if (index < 0 || index >= flatSentences.length) {
+                stopReading();
+                return;
+            }
+
+            stopCurrentAudio();
+            currentSentenceIndex = index;
+            isPlaying = true;
+
+            const item = flatSentences[index];
+            highlightSentence(item.id);
+            scrollToSentence(item.id);
+            updatePageIndicator(item.pageNum);
+            updatePlayBtn(true);
+
+            if (activeEngine === 'gemini') {
+                await playGeminiSentence(index, item.text);
+            } else {
+                playBrowserSentence(index, item.text);
+            }
+        }
+
+        async function playGeminiSentence(index, text) {
+            updateStatus("calling gemini AI...");
+            const voice = document.getElementById('geminiVoiceSelect').value;
+
+            try {
+                const audioData = await fetchGeminiSpeech(text, voice);
+                if (!isPlaying || currentSentenceIndex !== index) return;
+
+                const blob = pcmToWavBlob(audioData.base64, audioData.sampleRate);
+                const audioUrl = URL.createObjectURL(blob);
+
+                currentAudio = new Audio(audioUrl);
+                currentAudio.playbackRate = playbackSpeed;
+
+                currentAudio.onended = () => {
+                    if (isPlaying && currentSentenceIndex === index) nextSentence();
+                };
+
+                currentAudio.onerror = () => {
+                    setTimeout(() => { if (isPlaying) nextSentence(); }, 500);
+                };
+
+                await currentAudio.play();
+                updateStatus("reading aloud...");
+
+            } catch (err) {
+                console.warn("Gemini Error, falling back to browser voice:", err);
+                updateStatus("using browser voice...");
+                playBrowserSentence(index, text);
+            }
+        }
+
+        function playBrowserSentence(index, text) {
+            if (!synth) {
+                updateStatus("no audio engine");
+                setTimeout(() => { if (isPlaying) nextSentence(); }, 1500);
+                return;
+            }
+
+            updateStatus("reading aloud...");
+
+            browserUtterance = new SpeechSynthesisUtterance(text);
+            browserUtterance.rate = playbackSpeed;
+
+            const voiceIndex = document.getElementById('browserVoiceSelect').value;
+            const voices = synth.getVoices();
+            if (voiceIndex !== "" && voices[voiceIndex]) {
+                browserUtterance.voice = voices[voiceIndex];
+            }
+
+            browserUtterance.onend = () => {
+                if (isPlaying && currentSentenceIndex === index) nextSentence();
+            };
+
+            browserUtterance.onerror = (e) => {
+                console.warn("Browser Speech Error:", e);
+                if (isPlaying && currentSentenceIndex === index) nextSentence();
+            };
+
+            synth.speak(browserUtterance);
+        }
+
+        async function fetchGeminiSpeech(text, voiceName) {
+            const apiKey = storedApiKey || "";
+            if (!apiKey) throw new Error("No Gemini API key supplied");
+
+            const payload = {
+                contents: [{ parts: [{ text: text }] }],
+                generationConfig: {
+                    responseModalities: ["AUDIO"],
+                    speechConfig: {
+                        voiceConfig: {
+                            prebuiltVoiceConfig: { voiceName: voiceName || "Kore" }
+                        }
+                    }
+                },
+                model: "gemini-2.5-flash-preview-tts"
+            };
+
+            const response = await fetch(
+                `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                }
+            );
+
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+            const result = await response.json();
+            const part = result.candidates?.[0]?.content?.parts?.[0];
+
+            if (part?.inlineData?.data) {
+                let sampleRate = 24000;
+                const mime = part.inlineData.mimeType || '';
+                const rateMatch = mime.match(/rate=(\d+)/);
+                if (rateMatch) sampleRate = parseInt(rateMatch[1], 10);
+
+                return { base64: part.inlineData.data, sampleRate };
+            }
+            throw new Error("No audio payload");
+        }
+
+        function pcmToWavBlob(base64Data, sampleRate = 24000) {
+            const binaryString = atob(base64Data);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+
+            const numChannels = 1;
+            const bitsPerSample = 16;
+            const byteRate = (sampleRate * numChannels * bitsPerSample) / 8;
+            const blockAlign = (numChannels * bitsPerSample) / 8;
+            const dataSize = bytes.byteLength;
+            const chunkSize = 36 + dataSize;
+
+            const buffer = new ArrayBuffer(44 + dataSize);
+            const view = new DataView(buffer);
+
+            writeString(view, 0, 'RIFF');
+            view.setUint32(4, chunkSize, true);
+            writeString(view, 8, 'WAVE');
+
+            writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, numChannels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, byteRate, true);
+            view.setUint16(32, blockAlign, true);
+            view.setUint16(34, bitsPerSample, true);
+
+            writeString(view, 36, 'data');
+            view.setUint32(40, dataSize, true);
+
+            const wavBytes = new Uint8Array(buffer, 44);
+            wavBytes.set(bytes);
+
+            return new Blob([buffer], { type: 'audio/wav' });
+        }
+
+        function writeString(view, offset, string) {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        }
+
+        function nextSentence() {
+            if (currentSentenceIndex + 1 < flatSentences.length) {
+                playSentenceIndex(currentSentenceIndex + 1);
+            } else {
+                stopReading();
+                updateStatus("finished reading");
+            }
+        }
+
+        function prevSentence() {
+            if (currentSentenceIndex - 1 >= 0) {
+                playSentenceIndex(currentSentenceIndex - 1);
+            }
+        }
+
+        function pauseReading() {
+            isPlaying = false;
+            stopCurrentAudio();
+            updatePlayBtn(false);
+            updateStatus("paused");
+        }
+
+        function stopReading() {
+            isPlaying = false;
+            stopCurrentAudio();
+            currentSentenceIndex = -1;
+            clearHighlights();
+            updatePlayBtn(false);
+            updateProgressBar(0);
+            updateStatus("stopped");
+        }
+
+        function stopCurrentAudio() {
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio = null;
+            }
+            if (synth) {
+                synth.cancel();
+            }
+        }
+
+        function clearHighlights() {
+            document.querySelectorAll('.active-sentence').forEach(el => {
+                el.classList.remove('active-sentence');
+            });
+        }
+
+        function scrollToSentence(id) {
+            const el = document.getElementById(`sentence-${id}`);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        function updatePlayBtn(playing) {
+            const btn = document.getElementById('playPauseBtn');
+            if (btn) {
+                btn.innerHTML = playing ? `<i data-lucide="pause" class="w-5 h-5 fill-current"></i>` : `<i data-lucide="play" class="w-5 h-5 fill-current"></i>`;
+                lucide.createIcons();
+            }
+        }
+
+        function updateProgressBar(percent) {
+            document.getElementById('audioProgressBar').style.width = `${percent}%`;
+            document.getElementById('currentTimeDisplay').textContent = `${Math.round(percent)}% read`;
+        }
+
+        function seekProgress(e) {
+            if (flatSentences.length === 0) return;
+            const bar = e.currentTarget;
+            const rect = bar.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const ratio = clickX / rect.width;
+            const targetIdx = Math.floor(ratio * flatSentences.length);
+            playSentenceIndex(targetIdx);
+        }
+
+        function updatePageIndicator(pageNum) {
+            if (pdfDoc) {
+                document.getElementById('pageIndicator').textContent = `Page ${pageNum} of ${pdfDoc.numPages}`;
+            }
+        }
+
+        function updateStatus(str) {
+            document.getElementById('statusIndicator').textContent = str;
+        }
+
+        function showLoading(show, text = "") {
+            const overlay = document.getElementById('loadingOverlay');
+            if (show) {
+                overlay.classList.remove('hidden');
+                document.getElementById('loadingText').textContent = text;
+            } else {
+                overlay.classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
