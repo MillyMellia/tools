@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-[#EBF3FA] text-[#2C3E50]">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Translation Journal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Google Fonts: Sans + Handwriting / Serif styles for book aesthetic -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'sans-serif'],
+            hand: ['Caveat', 'cursive'],
+          },
+          colors: {
+            book: {
+              cover: '#93C5FD',      // Soft blue outer binder border
+              bg: '#F8FAFC',         // Off-white paper pages
+              line: '#E2E8F0',       // Lined paper rule color
+              sky: '#38BDF8',        // Accent sky blue
+              accent: '#0EA5E9',
+              dark: '#1E293B',
+              muted: '#64748B'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+
+    /* Lined Paper effect for notebook right side */
+    .notebook-lines {
+      background-image: linear-gradient(to bottom, transparent 95%, #E2E8F0 95%);
+      background-size: 100% 2.2rem;
+      line-height: 2.2rem;
+    }
+
+    /* Outer binder shadow */
+    .journal-shadow {
+      box-shadow: 0 20px 40px -10px rgba(147, 197, 253, 0.35), 0 10px 20px -5px rgba(30, 41, 59, 0.08);
+    }
+  </style>
+</head>
+<body class="h-full flex flex-col items-center justify-center font-sans antialiased bg-[#EBF3FA] p-3 sm:p-6 text-book-dark select-none">
+
+  <!-- Top Minimal Header Bar -->
+  <header class="w-full max-w-6xl mb-4 flex items-center justify-between px-2">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center text-book-sky text-lg">
+        <i class="fa-solid fa-book-open"></i>
+      </div>
+      <div>
+        <h1 class="font-bold text-base text-book-dark leading-tight">Translation Journal</h1>
+        <p class="text-xs text-book-muted">Line-by-line manual translation workbench</p>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex items-center gap-2">
+      <button id="copyAllBtn" class="bg-white hover:bg-slate-50 text-book-dark text-xs font-semibold px-4 py-2 rounded-full border border-slate-200 shadow-sm transition active:scale-95 flex items-center gap-2">
+        <i class="fa-solid fa-copy text-book-sky"></i> Copy English Output
+      </button>
+      <button id="resetBtn" class="bg-white hover:bg-slate-50 text-book-muted hover:text-rose-500 text-xs font-medium px-3 py-2 rounded-full border border-slate-200 shadow-sm transition">
+        <i class="fa-solid fa-rotate-left"></i> Reset
+      </button>
+    </div>
+  </header>
+
+  <!-- OPEN JOURNAL CONTAINER (Two Pages with Ring Binder) -->
+  <main class="w-full max-w-6xl h-full max-h-[820px] bg-book-cover p-3 sm:p-4 rounded-[36px] journal-shadow relative flex overflow-hidden border-2 border-white/60">
+    
+    <!-- INNER TWO-PAGE SPREAD -->
+    <div class="w-full h-full bg-book-bg rounded-[28px] flex flex-col md:flex-row relative overflow-hidden shadow-inner">
+
+      <!-- LEFT PAGE: Source Text Input & Line Selector -->
+      <section class="w-full md:w-1/2 h-full p-6 sm:p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-slate-200/80 bg-white/70 backdrop-blur-xs overflow-hidden">
+        
+        <!-- Header & Input area -->
+        <div class="flex flex-col gap-3 flex-1 overflow-hidden">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-book-sky bg-sky-50 px-3 py-1 rounded-full border border-sky-100">Page 1</span>
+              <h2 class="text-sm font-semibold text-book-dark">Original Text</h2>
+            </div>
+            <span id="lineCounter" class="text-xs text-book-muted">0 lines loaded</span>
+          </div>
+
+          <!-- Raw Input TextArea -->
+          <textarea id="rawTextInput" class="w-full h-36 bg-slate-50/70 border border-slate-200 rounded-2xl p-3.5 text-xs font-sans text-book-dark focus:outline-none focus:border-book-sky resize-none leading-relaxed placeholder:text-slate-400" placeholder="Paste your foreign text here...&#10;例：&#10;静かな朝、抹茶と小さな計画。&#10;毎日の一歩が大きな変化につながる。"></textarea>
+
+          <button id="processBtn" class="w-full bg-book-sky hover:bg-sky-500 text-white font-semibold text-xs py-2.5 rounded-xl transition shadow-sm active:scale-98 flex items-center justify-center gap-2">
+            <i class="fa-solid fa-scissors text-xs"></i> Split into Lines
+          </button>
+
+          <!-- Selectable Split Lines Container -->
+          <div class="flex-1 flex flex-col min-h-0 mt-2">
+            <span class="text-[11px] font-semibold text-book-muted mb-2 block">Click any line to translate on the right page:</span>
+            <div id="sourceLinesContainer" class="flex-1 overflow-y-auto pr-1 space-y-2">
+              <div class="h-full flex flex-col items-center justify-center text-center text-slate-400 p-4">
+                <i class="fa-solid fa-arrow-up text-lg mb-2 text-sky-300"></i>
+                <p class="text-xs">Paste text above and click "Split into Lines" to populate this page.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Page Footer Info -->
+        <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-book-muted">
+          <span>Split mode: Newlines (\n)</span>
+          <span id="activeLineIndicator" class="font-medium text-book-sky">No line selected</span>
+        </div>
+      </section>
+
+      <!-- BINDER RINGS (Center Spine) -->
+      <div class="hidden md:flex absolute left-1/2 top-0 bottom-0 -translate-x-1/2 w-8 z-20 flex-col justify-around items-center py-8 pointer-events-none">
+        <div class="w-9 h-3.5 bg-slate-300 rounded-full border border-slate-400/60 shadow-md flex items-center justify-between px-1">
+          <div class="w-1.5 h-1.5 rounded-full bg-slate-500"></div>
+          <div class="w-1.5 h-1.5 rounded-full bg-slate-500"></div>
+        </div>
+        <div class="w-9 h-3.5 bg-slate-300 rounded-full border border-slate-400/60 shadow-md flex items-center justify-between px-1">
+          <div class="w-1.5 h-1.5 rounded-full bg-slate-500"></div>
+          <div class="w-1.5 h-1.5 rounded-full bg-slate-500"></div>
+        </div>
+        <div class="w-9 h-3.5 bg-slate-300 rounded-full border border-slate-400/60 shadow-md flex items-center justify-between px-1">
+          <div class="w-1.5 h-1.5 rounded-full bg-slate-500"></div>
+          <div class="w-1.5 h-1.5 rounded-full bg-slate-500"></div>
+        </div>
+      </div>
+
+      <!-- RIGHT PAGE: Lined Notebook Page for Manual English Translation -->
+      <section class="w-full md:w-1/2 h-full p-6 sm:p-8 flex flex-col justify-between bg-white/90 overflow-hidden relative">
+        
+        <!-- Notebook Content Area -->
+        <div class="flex flex-col gap-4 flex-1 overflow-hidden">
+          
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-book-sky bg-sky-50 px-3 py-1 rounded-full border border-sky-100">Page 2</span>
+              <h2 class="text-sm font-semibold text-book-dark">English Translation</h2>
+            </div>
+
+            <!-- Navigation buttons -->
+            <div class="flex items-center gap-1.5">
+              <button id="prevLineBtn" class="w-7 h-7 rounded-full border border-slate-200 text-slate-500 hover:text-book-dark hover:bg-slate-50 flex items-center justify-center text-xs transition disabled:opacity-30">
+                <i class="fa-solid fa-chevron-left"></i>
+              </button>
+              <button id="nextLineBtn" class="w-7 h-7 rounded-full border border-slate-200 text-slate-500 hover:text-book-dark hover:bg-slate-50 flex items-center justify-center text-xs transition disabled:opacity-30">
+                <i class="fa-solid fa-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Active Source Display Box -->
+          <div class="bg-sky-50/60 border border-sky-100 rounded-2xl p-4 min-h-[70px] flex flex-col justify-center">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-sky-500 mb-1">Current Active Line:</span>
+            <p id="activeSourceText" class="text-sm font-medium text-book-dark select-text leading-relaxed">
+              <span class="italic text-slate-400 font-normal">Select a line from the left page to start writing...</span>
+            </p>
+          </div>
+
+          <!-- Lined Writing Paper Box -->
+          <div class="flex-1 flex flex-col min-h-0 relative rounded-2xl border border-slate-200 p-4 bg-slate-50/30 overflow-hidden">
+            <label for="activeTranslationInput" class="text-[11px] font-semibold text-slate-500 mb-1 block">Your English Translation:</label>
+            <textarea 
+              id="activeTranslationInput" 
+              class="w-full flex-1 bg-transparent text-sm text-book-dark font-sans leading-relaxed focus:outline-none resize-none notebook-lines placeholder:text-slate-300"
+              placeholder="Type your English translation here..."
+              disabled
+            ></textarea>
+          </div>
+
+        </div>
+
+        <!-- Right Page Footer Controls -->
+        <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+          <span class="text-slate-400 text-[11px]">Auto-saved to list</span>
+          <button id="copyCurrentBtn" class="text-book-sky hover:text-sky-600 font-semibold text-xs flex items-center gap-1">
+            <i class="fa-solid fa-copy"></i> Copy line
+          </button>
+        </div>
+
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-6 bg-book-dark text-white text-xs px-4 py-3 rounded-full shadow-lg flex items-center gap-2 transition-all transform translate-y-20 opacity-0 z-50 pointer-events-none">
+    <i id="toastIcon" class="fa-solid fa-circle-check text-sky-400"></i>
+    <span id="toastMessage">Action completed</span>
+  </div>
+
+  <script>
+    // --- Application State ---
+    let lines = [];
+    let selectedIndex = -1;
+
+    // --- DOM Elements ---
+    const rawTextInput = document.getElementById('rawTextInput');
+    const processBtn = document.getElementById('processBtn');
+    const sourceLinesContainer = document.getElementById('sourceLinesContainer');
+    const lineCounter = document.getElementById('lineCounter');
+    const activeLineIndicator = document.getElementById('activeLineIndicator');
+    const activeSourceText = document.getElementById('activeSourceText');
+    const activeTranslationInput = document.getElementById('activeTranslationInput');
+    const prevLineBtn = document.getElementById('prevLineBtn');
+    const nextLineBtn = document.getElementById('nextLineBtn');
+    const copyAllBtn = document.getElementById('copyAllBtn');
+    const copyCurrentBtn = document.getElementById('copyCurrentBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const toast = document.getElementById('toast');
+    const toastMessage = document.getElementById('toastMessage');
+
+    // --- Listeners ---
+    processBtn.addEventListener('click', processLines);
+    activeTranslationInput.addEventListener('input', updateCurrentTranslation);
+    prevLineBtn.addEventListener('click', () => selectLine(selectedIndex - 1));
+    nextLineBtn.addEventListener('click', () => selectLine(selectedIndex + 1));
+    copyAllBtn.addEventListener('click', copyAllTranslations);
+    copyCurrentBtn.addEventListener('click', copyCurrentTranslation);
+    resetBtn.addEventListener('click', resetAll);
+
+    // --- Core Methods ---
+    function processLines() {
+      const text = rawTextInput.value.trim();
+      if (!text) {
+        showToast('Please paste some text first!');
+        return;
+      }
+
+      const splitArr = text.split(/\r?\n/).filter(line => line.trim().length > 0);
+      
+      lines = splitArr.map((sourceText, idx) => ({
+        id: idx,
+        source: sourceText.trim(),
+        translation: ''
+      }));
+
+      lineCounter.textContent = `${lines.length} lines loaded`;
+      renderSourceLines();
+
+      if (lines.length > 0) {
+        selectLine(0);
+      }
+      showToast(`Loaded ${lines.length} lines.`);
+    }
+
+    function renderSourceLines() {
+      sourceLinesContainer.innerHTML = '';
+
+      if (lines.length === 0) {
+        sourceLinesContainer.innerHTML = `
+          <div class="h-full flex flex-col items-center justify-center text-center text-slate-400 p-4">
+            <i class="fa-solid fa-arrow-up text-lg mb-2 text-sky-300"></i>
+            <p class="text-xs">Paste text above and click "Split into Lines" to populate this page.</p>
+          </div>`;
+        return;
+      }
+
+      lines.forEach((item, idx) => {
+        const lineItem = document.createElement('div');
+        const isSelected = idx === selectedIndex;
+        const isTranslated = item.translation.trim().length > 0;
+
+        lineItem.className = `p-3 rounded-xl text-xs transition cursor-pointer border flex items-start gap-2.5 ${
+          isSelected 
+            ? 'bg-sky-50 border-book-sky text-book-dark shadow-xs' 
+            : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
+        }`;
+
+        lineItem.innerHTML = `
+          <span class="font-bold text-[10px] px-1.5 py-0.5 rounded ${isSelected ? 'bg-book-sky text-white' : 'bg-slate-100 text-slate-500'}">
+            #${idx + 1}
+          </span>
+          <p class="flex-1 leading-relaxed font-sans">${escapeHtml(item.source)}</p>
+          ${isTranslated ? `<i class="fa-solid fa-check text-emerald-500 text-xs mt-0.5" title="Translated"></i>` : ''}
+        `;
+
+        lineItem.addEventListener('click', () => selectLine(idx));
+        sourceLinesContainer.appendChild(lineItem);
+      });
+    }
+
+    function selectLine(index) {
+      if (index < 0 || index >= lines.length) return;
+
+      selectedIndex = index;
+      const current = lines[selectedIndex];
+
+      activeSourceText.textContent = current.source;
+      activeTranslationInput.value = current.translation;
+      activeTranslationInput.disabled = false;
+      activeTranslationInput.focus();
+
+      activeLineIndicator.textContent = `Active Line #${selectedIndex + 1} / ${lines.length}`;
+
+      prevLineBtn.disabled = selectedIndex === 0;
+      nextLineBtn.disabled = selectedIndex === lines.length - 1;
+
+      renderSourceLines();
+    }
+
+    function updateCurrentTranslation() {
+      if (selectedIndex < 0 || !lines[selectedIndex]) return;
+      lines[selectedIndex].translation = activeTranslationInput.value;
+      renderSourceLines();
+    }
+
+    function copyAllTranslations() {
+      const fullText = lines
+        .map(l => l.translation.trim())
+        .filter(t => t.length > 0)
+        .join('\n');
+
+      if (!fullText) {
+        showToast('No translations typed yet.');
+        return;
+      }
+
+      copyToClipboard(fullText);
+      showToast('All English translations copied!');
+    }
+
+    function copyCurrentTranslation() {
+      if (selectedIndex < 0 || !lines[selectedIndex] || !lines[selectedIndex].translation) {
+        showToast('Current line has no translation.');
+        return;
+      }
+      copyToClipboard(lines[selectedIndex].translation);
+      showToast(`Copied Line #${selectedIndex + 1}`);
+    }
+
+    function copyToClipboard(text) {
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+    }
+
+    function resetAll() {
+      lines = [];
+      selectedIndex = -1;
+      rawTextInput.value = '';
+      activeTranslationInput.value = '';
+      activeTranslationInput.disabled = true;
+      activeSourceText.innerHTML = `<span class="italic text-slate-400 font-normal">Select a line from the left page to start writing...</span>`;
+      lineCounter.textContent = '0 lines loaded';
+      activeLineIndicator.textContent = 'No line selected';
+      renderSourceLines();
+      showToast('Workbench reset.');
+    }
+
+    function showToast(msg) {
+      toastMessage.textContent = msg;
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 2500);
+    }
+
+    function escapeHtml(str) {
+      return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+  </script>
+</body>
+</html>
