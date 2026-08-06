@@ -56,7 +56,7 @@
     }
   </style>
 </head>
-<body class="h-full flex flex-col items-center justify-center font-sans antialiased bg-[#EBF3FA] p-3 sm:p-6 text-book-dark select-none">
+<body class="h-full flex flex-col items-center justify-center font-sans antialiased bg-[#EBF3FA] p-3 sm:p-6 text-book-dark select-none relative">
 
   <!-- Top Minimal Header Bar -->
   <header class="w-full max-w-6xl mb-4 flex items-center justify-between px-2">
@@ -72,6 +72,11 @@
 
     <!-- Actions -->
     <div class="flex items-center gap-2">
+      <!-- NEW: Full Overview Button -->
+      <button id="openOverviewBtn" class="bg-book-sky hover:bg-sky-500 text-white text-xs font-semibold px-4 py-2 rounded-full shadow-sm transition active:scale-95 flex items-center gap-2">
+        <i class="fa-solid fa-[#2C3E50] fa-book-reader text-xs"></i> Full Overview & Progress
+      </button>
+
       <button id="copyAllBtn" class="bg-white hover:bg-slate-50 text-book-dark text-xs font-semibold px-4 py-2 rounded-full border border-slate-200 shadow-sm transition active:scale-95 flex items-center gap-2">
         <i class="fa-solid fa-copy text-book-sky"></i> Copy English Output
       </button>
@@ -199,6 +204,66 @@
     </div>
   </main>
 
+  <!-- OVERVIEW POPUP MODAL -->
+  <div id="overviewModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all opacity-0 pointer-events-none">
+    <div class="bg-white rounded-[28px] w-full max-w-4xl h-[85vh] max-h-[750px] shadow-2xl flex flex-col overflow-hidden border border-slate-100 transform scale-95 transition-all" id="overviewModalContainer">
+      
+      <!-- Modal Header -->
+      <div class="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
+        <div>
+          <h3 class="text-lg font-bold text-book-dark flex items-center gap-2">
+            <i class="fa-solid fa-book-open text-book-sky"></i> Translation Overview
+          </h3>
+          <p class="text-xs text-book-muted">Full side-by-side context view of your document</p>
+        </div>
+
+        <!-- Progress Indicator & Actions -->
+        <div class="flex items-center gap-4">
+          <div class="text-right hidden sm:block">
+            <span class="text-xs text-slate-400">Progress</span>
+            <div id="modalProgressText" class="text-xs font-bold text-book-sky">0 / 0 lines (0%)</div>
+          </div>
+
+          <button id="copyFromModalBtn" class="bg-book-sky hover:bg-sky-500 text-white text-xs font-semibold px-3.5 py-2 rounded-full transition active:scale-95 flex items-center gap-1.5">
+            <i class="fa-solid fa-copy text-xs"></i> Copy All
+          </button>
+
+          <button id="closeOverviewBtn" class="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal Tab Controls -->
+      <div class="bg-slate-100/60 px-6 py-2 border-b border-slate-100 flex gap-2">
+        <button id="tabBilingual" class="text-xs font-semibold px-3 py-1.5 rounded-full bg-white text-book-dark shadow-xs border border-slate-200/60">
+          Side-by-Side Context
+        </button>
+        <button id="tabEnglishOnly" class="text-xs font-medium px-3 py-1.5 rounded-full text-slate-500 hover:text-book-dark">
+          English Only Text
+        </button>
+      </div>
+
+      <!-- Modal Body (Bilingual List View) -->
+      <div id="modalBilingualView" class="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/30">
+        <!-- Lines list injected here -->
+      </div>
+
+      <!-- Modal Body (Continuous Text View) -->
+      <div id="modalEnglishView" class="flex-1 overflow-y-auto p-6 hidden">
+        <div id="modalContinuousText" class="text-sm leading-relaxed text-book-dark bg-slate-50 p-6 rounded-2xl border border-slate-200/60 whitespace-pre-line font-sans select-text">
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-4 border-t border-slate-100 bg-white text-xs text-slate-400 flex justify-between items-center px-6">
+        <span>Click any line inside the overview to jump to it for editing.</span>
+        <button id="closeModalBottomBtn" class="text-book-sky font-semibold hover:underline">Close window</button>
+      </div>
+
+    </div>
+  </div>
+
   <!-- Toast Notification -->
   <div id="toast" class="fixed bottom-6 bg-book-dark text-white text-xs px-4 py-3 rounded-full shadow-lg flex items-center gap-2 transition-all transform translate-y-20 opacity-0 z-50 pointer-events-none">
     <i id="toastIcon" class="fa-solid fa-circle-check text-sky-400"></i>
@@ -226,6 +291,20 @@
     const toast = document.getElementById('toast');
     const toastMessage = document.getElementById('toastMessage');
 
+    // Modal DOM Elements
+    const openOverviewBtn = document.getElementById('openOverviewBtn');
+    const closeOverviewBtn = document.getElementById('closeOverviewBtn');
+    const closeModalBottomBtn = document.getElementById('closeModalBottomBtn');
+    const overviewModal = document.getElementById('overviewModal');
+    const overviewModalContainer = document.getElementById('overviewModalContainer');
+    const modalBilingualView = document.getElementById('modalBilingualView');
+    const modalEnglishView = document.getElementById('modalEnglishView');
+    const modalContinuousText = document.getElementById('modalContinuousText');
+    const modalProgressText = document.getElementById('modalProgressText');
+    const copyFromModalBtn = document.getElementById('copyFromModalBtn');
+    const tabBilingual = document.getElementById('tabBilingual');
+    const tabEnglishOnly = document.getElementById('tabEnglishOnly');
+
     // --- Listeners ---
     processBtn.addEventListener('click', processLines);
     activeTranslationInput.addEventListener('input', updateCurrentTranslation);
@@ -234,6 +313,26 @@
     copyAllBtn.addEventListener('click', copyAllTranslations);
     copyCurrentBtn.addEventListener('click', copyCurrentTranslation);
     resetBtn.addEventListener('click', resetAll);
+
+    // Modal Listeners
+    openOverviewBtn.addEventListener('click', showOverviewModal);
+    closeOverviewBtn.addEventListener('click', hideOverviewModal);
+    closeModalBottomBtn.addEventListener('click', hideOverviewModal);
+    copyFromModalBtn.addEventListener('click', copyAllTranslations);
+
+    tabBilingual.addEventListener('click', () => {
+      tabBilingual.className = "text-xs font-semibold px-3 py-1.5 rounded-full bg-white text-book-dark shadow-xs border border-slate-200/60";
+      tabEnglishOnly.className = "text-xs font-medium px-3 py-1.5 rounded-full text-slate-500 hover:text-book-dark";
+      modalBilingualView.classList.remove('hidden');
+      modalEnglishView.classList.add('hidden');
+    });
+
+    tabEnglishOnly.addEventListener('click', () => {
+      tabEnglishOnly.className = "text-xs font-semibold px-3 py-1.5 rounded-full bg-white text-book-dark shadow-xs border border-slate-200/60";
+      tabBilingual.className = "text-xs font-medium px-3 py-1.5 rounded-full text-slate-500 hover:text-book-dark";
+      modalEnglishView.classList.remove('hidden');
+      modalBilingualView.classList.add('hidden');
+    });
 
     // --- Core Methods ---
     function processLines() {
@@ -319,6 +418,74 @@
       if (selectedIndex < 0 || !lines[selectedIndex]) return;
       lines[selectedIndex].translation = activeTranslationInput.value;
       renderSourceLines();
+    }
+
+    // --- Modal Logic ---
+    function showOverviewModal() {
+      if (lines.length === 0) {
+        showToast('Load some lines first to view overview!');
+        return;
+      }
+
+      // Render Modal Content
+      modalBilingualView.innerHTML = '';
+      let translatedCount = 0;
+
+      lines.forEach((item, idx) => {
+        const isDone = item.translation.trim().length > 0;
+        if (isDone) translatedCount++;
+
+        const row = document.createElement('div');
+        row.className = `p-4 rounded-2xl border transition cursor-pointer flex flex-col md:flex-row gap-3 md:gap-6 ${
+          isDone ? 'bg-white border-slate-200/80 hover:border-book-sky' : 'bg-slate-100/50 border-dashed border-slate-200 opacity-70'
+        }`;
+
+        row.innerHTML = `
+          <div class="flex items-center gap-2 md:w-16 flex-shrink-0">
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded ${isDone ? 'bg-sky-100 text-book-sky' : 'bg-slate-200 text-slate-500'}">
+              #${idx + 1}
+            </span>
+          </div>
+          <div class="flex-1 text-xs text-slate-700 leading-relaxed font-sans">
+            <span class="text-[10px] font-bold text-slate-400 block mb-0.5 uppercase tracking-wide">Original:</span>
+            ${escapeHtml(item.source)}
+          </div>
+          <div class="flex-1 text-xs text-book-dark leading-relaxed font-sans border-t md:border-t-0 md:border-l border-slate-100 pt-2 md:pt-0 md:pl-4">
+            <span class="text-[10px] font-bold text-book-sky block mb-0.5 uppercase tracking-wide">Translation:</span>
+            ${item.translation ? escapeHtml(item.translation) : `<span class="italic text-slate-400">Untranslated</span>`}
+          </div>
+        `;
+
+        row.addEventListener('click', () => {
+          selectLine(idx);
+          hideOverviewModal();
+        });
+
+        modalBilingualView.appendChild(row);
+      });
+
+      // Update Continuous Text View
+      const compiledEnglish = lines
+        .map(l => l.translation.trim())
+        .filter(t => t.length > 0)
+        .join('\n\n');
+
+      modalContinuousText.textContent = compiledEnglish || 'No translated lines available yet...';
+
+      // Update Progress Counter
+      const percent = Math.round((translatedCount / lines.length) * 100);
+      modalProgressText.textContent = `${translatedCount} / ${lines.length} lines (${percent}%)`;
+
+      // Animate In
+      overviewModal.classList.remove('opacity-0', 'pointer-events-none');
+      overviewModalContainer.classList.remove('scale-95');
+      overviewModalContainer.classList.add('scale-100');
+    }
+
+    function hideOverviewModal() {
+      overviewModal.classList.add('opacity-0', 'pointer-events-none');
+      overviewModalContainer.classList.remove('scale-100');
+      overviewModalContainer.classList.add('scale-95');
     }
 
     function copyAllTranslations() {
