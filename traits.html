@@ -1,1252 +1,841 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mahoyaku Party & Trait Manager</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            bg: '#f3f4f8',
-                            sidebar: '#ffffff',
-                            card: '#ffffff',
-                            navy: '#1d1e30',
-                            accentPurple: '#c3b1e1',
-                            accentPeach: '#ffe5d9',
-                            accentLime: '#d8f5a2',
-                            accentBlue: '#d0e1fd',
-                            textPrimary: '#1e293b',
-                            textSecondary: '#64748b'
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Plus Jakarta Sans', 'Inter', '-apple-system', 'sans-serif'],
-                    }
-                }
-            }
-        }
-    </script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #f3f4f8;
-            color: #1e293b;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #f1f5f9;
-            border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
-        .card-elevated {
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
-        }
-        .hero-gradient {
-            background: linear-gradient(135deg, #1e1e2d 0%, #2a2a40 100%);
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>パーティピッカー — Party Picker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#111111;
+    --cream:#F7F3EF;
+    --paper:#FFFFFF;
+    --yellow:#FFE59A;
+    --pink:#FFB5C1;
+    --mint:#B7E1D1;
+    --sky:#A9D3FF;
+    --peach:#FFD9B3;
+    --lavender:#DAC9F0;
+    --line: rgba(17,17,17,0.10);
+    --line-strong: rgba(17,17,17,0.16);
+    --radius-lg: 28px;
+    --radius-md: 20px;
+    --radius-sm: 12px;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--cream);
+    color:var(--ink);
+    font-family:'Noto Sans JP', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3, .display{
+    font-family:'Zen Maru Gothic', 'Noto Sans JP', sans-serif;
+    font-weight:900;
+    letter-spacing:-0.01em;
+    margin:0;
+  }
+  p{margin:0;}
+  button{font-family:inherit;}
+  a{color:inherit;}
+
+  .wrap{max-width:1180px; margin:0 auto; padding:0 28px;}
+  @media (max-width:640px){ .wrap{padding:0 18px;} }
+
+  /* ---------- Blob mascot (signature element) ---------- */
+  .blob{
+    position:relative;
+    border-radius:63% 37% 41% 59% / 55% 45% 55% 45%;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .blob .eyes{
+    display:flex; gap: 18%;
+  }
+  .blob .eyes span{
+    display:block; border-radius:50%; background:var(--ink);
+    width:14%; aspect-ratio:1/1;
+  }
+
+  /* ---------- Header ---------- */
+  header{
+    position:sticky; top:0; z-index:50;
+    background:rgba(247,243,239,0.88);
+    backdrop-filter: blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav{
+    display:flex; align-items:center; justify-content:space-between;
+    height:78px;
+  }
+  .logo{display:flex; align-items:center; gap:10px; font-weight:700; font-size:15px;}
+  .logo .blob{width:34px; height:34px; background:var(--ink);}
+  .logo .blob .eyes span{background:var(--cream);}
+  .logo small{display:block; font-weight:400; font-size:10px; letter-spacing:.08em; opacity:.6;}
+  .navlinks{display:flex; gap:30px; font-size:14px; font-weight:600;}
+  .navlinks a{text-decoration:none; opacity:.75; transition:opacity .15s;}
+  .navlinks a:hover{opacity:1;}
+  @media (max-width:720px){ .navlinks{display:none;} }
+  .navcta{
+    background:var(--ink); color:var(--cream); border:none;
+    border-radius:999px; padding:11px 20px; font-size:13px; font-weight:700;
+    display:flex; align-items:center; gap:8px; cursor:pointer;
+  }
+  .navcta .dot{width:18px; height:18px; border-radius:50%; background:var(--yellow); display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--ink);}
+
+  /* ---------- Hero ---------- */
+  .hero{
+    display:grid; grid-template-columns:1.1fr 0.9fr; gap:40px;
+    align-items:center; padding:72px 0 56px;
+  }
+  @media (max-width:900px){ .hero{grid-template-columns:1fr; padding:44px 0 32px;} }
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:8px;
+    background:var(--paper); border:1px solid var(--line-strong);
+    padding:6px 14px 6px 8px; border-radius:999px; font-size:12px; font-weight:700;
+    margin-bottom:22px;
+  }
+  .eyebrow .blob{width:20px;height:20px; background:var(--yellow);}
+  .hero h1{font-size:52px; line-height:1.22;}
+  @media (max-width:900px){ .hero h1{font-size:38px;} }
+  @media (max-width:480px){ .hero h1{font-size:31px;} }
+  .hero p.lead{
+    margin-top:20px; font-size:16px; line-height:1.9; max-width:46ch; opacity:.75;
+  }
+  .hero .actions{display:flex; gap:12px; margin-top:32px; flex-wrap:wrap;}
+  .btn-primary, .btn-secondary{
+    border:none; border-radius:999px; padding:15px 24px; font-size:14px; font-weight:700;
+    cursor:pointer; display:inline-flex; align-items:center; gap:10px;
+  }
+  .btn-primary{background:var(--ink); color:var(--cream);}
+  .btn-primary .dot{width:20px;height:20px;border-radius:50%;background:var(--yellow); display:flex;align-items:center;justify-content:center; font-size:12px; color:var(--ink);}
+  .btn-secondary{background:transparent; color:var(--ink); border:1.5px solid var(--line-strong);}
+
+  .hero-art{
+    position:relative; height:340px;
+  }
+  .hero-art .blob-a{
+    position:absolute; width:230px; height:230px; left:8%; top:6%;
+    background:var(--cream); border:1.5px solid var(--line-strong);
+  }
+  .hero-art .blob-a .eyes span{width:16px;height:16px;}
+  .hero-art .blob-b{
+    position:absolute; width:180px; height:150px; right:6%; bottom:8%;
+    background:var(--yellow);
+    border-radius:38% 62% 55% 45% / 45% 40% 60% 55%;
+  }
+  .hero-art .chip{
+    position:absolute; background:var(--paper); border:1px solid var(--line-strong);
+    border-radius:16px; padding:12px 16px; font-size:13px; font-weight:700;
+    box-shadow:0 12px 24px rgba(17,17,17,0.06);
+  }
+  .hero-art .chip.c1{ top:2%; right:10%; }
+  .hero-art .chip.c2{ bottom:0%; left:6%; }
+
+  /* ---------- Legend ---------- */
+  .legend{
+    display:flex; gap:12px; flex-wrap:wrap; padding:22px 0 8px;
+    border-top:1px solid var(--line);
+  }
+  .legend .tag{
+    display:flex; align-items:center; gap:8px; background:var(--paper);
+    border:1px solid var(--line); border-radius:999px; padding:8px 14px 8px 8px; font-size:12.5px; font-weight:600;
+  }
+  .legend .swatch{width:16px;height:16px;border-radius:50%;}
+
+  /* ---------- Section headers ---------- */
+  .section-head{padding:56px 0 22px;}
+  .kicker{
+    text-transform:uppercase; font-size:11px; font-weight:700; letter-spacing:.14em; opacity:.5;
+  }
+  .section-head h2{font-size:30px; margin-top:8px;}
+  .section-head p{margin-top:10px; opacity:.65; font-size:14.5px; max-width:60ch;}
+
+  /* ---------- Picker layout ---------- */
+  .picker-shell{
+    display:grid; grid-template-columns:1fr 340px; gap:24px; padding-bottom:80px;
+  }
+  @media (max-width:980px){ .picker-shell{grid-template-columns:1fr;} }
+
+  /* filters */
+  .filters{
+    background:var(--paper); border:1px solid var(--line); border-radius:var(--radius-md);
+    padding:18px; margin-bottom:18px;
+    display:flex; flex-wrap:wrap; gap:10px; align-items:center;
+  }
+  .filters input[type="search"]{
+    flex:1 1 200px; border:1px solid var(--line-strong); border-radius:999px; padding:10px 16px;
+    font-size:13.5px; font-family:inherit; background:var(--cream);
+  }
+  select.filter-select{
+    border:1px solid var(--line-strong); border-radius:999px; padding:10px 14px; font-size:13px;
+    background:var(--cream); font-family:inherit; font-weight:600;
+  }
+  .chip-toggle{
+    border:1.5px solid var(--line-strong); background:var(--cream); border-radius:999px;
+    padding:9px 16px; font-size:13px; font-weight:700; cursor:pointer; transition:all .12s;
+  }
+  .chip-toggle[data-active="true"]{background:var(--ink); color:var(--cream); border-color:var(--ink);}
+  .rarity-toggles{display:flex; gap:8px;}
+  .filters .count{font-size:12px; opacity:.55; font-weight:600; margin-left:auto;}
+
+  /* grid of cards */
+  .card-grid{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:12px;
+  }
+  .card-tile{
+    background:var(--paper); border:1.5px solid var(--line); border-radius:var(--radius-sm);
+    padding:14px; cursor:pointer; text-align:left; position:relative; transition:transform .12s, border-color .12s, box-shadow .12s;
+  }
+  .card-tile:hover{transform:translateY(-3px); box-shadow:0 14px 26px rgba(17,17,17,0.07);}
+  .card-tile[data-selected="true"]{ border-color:var(--ink); box-shadow:0 0 0 2px var(--ink) inset; }
+  .card-tile[data-disabled="true"]{ opacity:.35; cursor:not-allowed; }
+  .card-tile[data-disabled="true"]:hover{ transform:none; box-shadow:none; }
+
+  .card-icon{
+    width:100%; aspect-ratio:1/0.82; border-radius:14px; margin-bottom:10px;
+    display:flex; align-items:center; justify-content:center; position:relative;
+  }
+  .card-icon .blob{width:52%; height:52%; background:rgba(255,255,255,0.65);}
+  .card-icon .blob .eyes span{width:15%;}
+  .rarity-pip{
+    position:absolute; top:8px; left:8px; font-size:10px; font-weight:800; letter-spacing:.03em;
+    background:var(--ink); color:var(--cream); padding:2px 7px; border-radius:999px;
+  }
+  .rarity-pip.ssr{background:var(--ink); color:var(--yellow);}
+  .rarity-pip.sr{background:var(--ink); color:var(--sky);}
+  .star-pip{
+    position:absolute; bottom:8px; right:8px; font-size:10px; font-weight:800;
+    background:rgba(255,255,255,0.85); padding:2px 6px; border-radius:999px;
+  }
+  .card-tile .char{font-size:12px; font-weight:800; opacity:.55; text-transform:uppercase; letter-spacing:.02em;}
+  .card-tile .title-en{font-size:13px; font-weight:700; line-height:1.35; margin-top:2px; min-height:34px;}
+  .card-tile .title-jp{font-size:11.5px; opacity:.55; margin-top:3px;}
+  .attr-dot{display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:5px;}
+
+  .empty-state{
+    grid-column:1/-1; text-align:center; padding:60px 20px; opacity:.6;
+  }
+  .empty-state .blob{width:70px; height:70px; margin:0 auto 16px; background:var(--paper); border:1.5px solid var(--line-strong);}
+
+  /* ---------- Sidebar (party + detail + points) ---------- */
+  .side-stack{display:flex; flex-direction:column; gap:16px; position:sticky; top:100px; align-self:start;}
+  .panel{
+    background:var(--paper); border:1px solid var(--line); border-radius:var(--radius-md); padding:20px;
+  }
+  .panel h3{font-size:14px; text-transform:uppercase; letter-spacing:.06em; font-weight:800;}
+  .panel .sub{font-size:11.5px; opacity:.5; margin-top:4px; font-weight:600;}
+
+  .party-slots{display:flex; gap:8px; margin-top:16px;}
+  .slot{
+    flex:1; aspect-ratio:1/1; border-radius:12px; border:1.5px dashed var(--line-strong);
+    display:flex; align-items:center; justify-content:center; position:relative; background:var(--cream);
+  }
+  .slot.filled{border-style:solid; border-color:var(--ink); cursor:pointer;}
+  .slot .blob{width:60%;height:60%;}
+  .slot .remove{
+    position:absolute; top:-6px; right:-6px; width:18px; height:18px; border-radius:50%;
+    background:var(--ink); color:var(--cream); font-size:10px; display:flex; align-items:center; justify-content:center;
+    border:2px solid var(--paper); cursor:pointer;
+  }
+  .reset-link{
+    display:block; text-align:center; margin-top:14px; font-size:12px; font-weight:700;
+    opacity:.55; background:none; border:none; cursor:pointer; width:100%; text-decoration:underline;
+  }
+
+  .detail-empty{font-size:13px; opacity:.55; margin-top:14px; line-height:1.7;}
+  .detail-card{margin-top:14px;}
+  .detail-card .badges{display:flex; gap:6px; margin-bottom:10px;}
+  .badge{font-size:10.5px; font-weight:800; padding:4px 9px; border-radius:999px; background:var(--cream); border:1px solid var(--line-strong);}
+  .detail-card .en{font-size:15px; font-weight:800; line-height:1.35;}
+  .detail-card .jp{font-size:12.5px; opacity:.55; margin-top:3px;}
+  .detail-card .char{font-size:12px; margin-top:8px; font-weight:700; opacity:.7;}
+  .trait-note{
+    font-size:10.5px; opacity:.5; margin-top:16px; padding-top:12px; border-top:1px solid var(--line);
+    line-height:1.6;
+  }
+  .trait-chips{display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;}
+  .trait-chip{
+    font-size:12px; font-weight:700; padding:6px 12px; border-radius:999px;
+    display:flex; align-items:center; gap:6px;
+  }
+
+  .points-total{font-size:38px; font-weight:900; font-family:'Zen Maru Gothic',sans-serif; margin-top:6px;}
+  .points-breakdown{margin-top:14px; display:flex; flex-direction:column; gap:8px;}
+  .points-row{display:flex; justify-content:space-between; font-size:12.5px; font-weight:600; opacity:.7;}
+  .points-formula{
+    font-size:10.5px; opacity:.5; margin-top:14px; padding-top:12px; border-top:1px solid var(--line); line-height:1.6;
+  }
+
+  footer{border-top:1px solid var(--line); padding:34px 0 46px; margin-top:20px;}
+  footer .foot-row{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;}
+  footer .foot-note{font-size:11.5px; opacity:.5; max-width:56ch; line-height:1.7;}
+</style>
 </head>
-<body class="bg-brand-bg min-h-screen flex text-slate-800 antialiased overflow-x-hidden">
+<body>
 
-    <!-- SIDEBAR -->
-    <aside class="w-64 bg-white border-r border-slate-200/80 flex flex-col justify-between p-6 shrink-0 fixed top-0 bottom-0 left-0 z-30">
-        <div>
-            <!-- Logo -->
-            <div class="flex items-center gap-3 px-2 mb-8">
-                <div class="w-10 h-10 rounded-xl bg-brand-navy flex items-center justify-center text-white font-bold text-xl shadow-md">
-                    <i data-lucide="sparkles" class="w-5 h-5 text-amber-300"></i>
-                </div>
-                <div>
-                    <h1 class="font-bold text-lg tracking-tight text-slate-900 leading-none">Mahoyaku</h1>
-                    <span class="text-xs text-slate-400 font-medium">Party & Trait Master</span>
-                </div>
-            </div>
+<header>
+  <div class="wrap nav">
+    <div class="logo">
+      <div class="blob"><div class="eyes"><span></span><span></span></div></div>
+      <div>パーティピッカー<small>PARTY PICKER · STATIC DEMO</small></div>
+    </div>
+    <nav class="navlinks">
+      <a href="#legend">属性</a>
+      <a href="#picker">カードを選ぶ</a>
+      <a href="#about">このサイトについて</a>
+    </nav>
+    <button class="navcta" onclick="document.getElementById('picker').scrollIntoView()">
+      <span class="dot">→</span> ピッカーを開く
+    </button>
+  </div>
+</header>
 
-            <!-- Nav Links -->
-            <nav class="space-y-1.5">
-                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-item w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl font-semibold text-sm transition-all bg-brand-navy text-white shadow-sm">
-                    <i data-lucide="layout-grid" class="w-5 h-5"></i>
-                    Dashboard
-                </button>
-                <button onclick="switchTab('party')" id="nav-party" class="nav-item w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl font-semibold text-sm transition-all text-slate-500 hover:bg-slate-100 hover:text-slate-900">
-                    <i data-lucide="users" class="w-5 h-5"></i>
-                    Party Builder
-                    <span id="party-count-badge" class="ml-auto bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full font-bold">0/5</span>
-                </button>
-                <button onclick="switchTab('database')" id="nav-database" class="nav-item w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl font-semibold text-sm transition-all text-slate-500 hover:bg-slate-100 hover:text-slate-900">
-                    <i data-lucide="database" class="w-5 h-5"></i>
-                    Card Database
-                </button>
-                <button onclick="switchTab('traits')" id="nav-traits" class="nav-item w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl font-semibold text-sm transition-all text-slate-500 hover:bg-slate-100 hover:text-slate-900">
-                    <i data-lucide="tags" class="w-5 h-5"></i>
-                    Traits Matrix
-                </button>
-                <button onclick="switchTab('calculator')" id="nav-calculator" class="nav-item w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl font-semibold text-sm transition-all text-slate-500 hover:bg-slate-100 hover:text-slate-900">
-                    <i data-lucide="calculator" class="w-5 h-5"></i>
-                    Trait Combinatorics
-                </button>
-                <button onclick="switchTab('sheet')" id="nav-sheet" class="nav-item w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl font-semibold text-sm transition-all text-slate-500 hover:bg-slate-100 hover:text-slate-900">
-                    <i data-lucide="file-spreadsheet" class="w-5 h-5"></i>
-                    Source Data
-                </button>
-            </nav>
+<main class="wrap">
+
+  <section class="hero">
+    <div>
+      <div class="eyebrow"><div class="blob"></div> SSR / SR 限定ピッカー</div>
+      <h1>5枚選んで、<br>パーティを組み立てよう。</h1>
+      <p class="lead">
+        SSR・SRカードだけを対象にした簡易パーティピッカーです。カードを選ぶと特性（サンプル）が表示され、
+        右側のパネルで合計ポイントをリアルタイムに計算します。
+      </p>
+      <div class="actions">
+        <button class="btn-primary" onclick="document.getElementById('picker').scrollIntoView()">
+          <span class="dot">✧</span> カードを選ぶ
+        </button>
+        <button class="btn-secondary" onclick="document.getElementById('about').scrollIntoView()">仕組みを見る</button>
+      </div>
+    </div>
+    <div class="hero-art">
+      <div class="blob blob-a"><div class="eyes"><span></span><span></span></div></div>
+      <div class="blob-b"></div>
+      <div class="chip c1">MAX 5 CARDS</div>
+      <div class="chip c2">SSR + SR ONLY</div>
+    </div>
+  </section>
+
+  <div id="legend" class="legend"></div>
+
+  <section id="picker">
+    <div class="section-head">
+      <div class="kicker">Party Picker</div>
+      <h2>カードを選択</h2>
+      <p>キャラクター・属性・レアリティで絞り込めます。カードをクリックするとパーティに追加され、特性と合計ポイントが更新されます。</p>
+    </div>
+
+    <div class="picker-shell">
+      <div>
+        <div class="filters">
+          <input id="search" type="search" placeholder="タイトル・キャラクターで検索…" oninput="renderGrid()">
+          <select id="charFilter" class="filter-select" onchange="renderGrid()"></select>
+          <select id="attrFilter" class="filter-select" onchange="renderGrid()">
+            <option value="">全属性</option>
+          </select>
+          <div class="rarity-toggles">
+            <button class="chip-toggle" id="toggle-SSR" data-active="true" onclick="toggleRarity('SSR')">SSR</button>
+            <button class="chip-toggle" id="toggle-SR" data-active="true" onclick="toggleRarity('SR')">SR</button>
+          </div>
+          <span class="count" id="resultCount"></span>
         </div>
 
-        <!-- Sidebar Footer -->
-        <div class="pt-6 border-t border-slate-100">
-            <a href="https://docs.google.com/spreadsheets/d/1oWcKyRqZMFc85CNlKIHiGQ_LLnzmqsRtpEl6Z88lVK0/edit?usp=sharing" target="_blank" class="flex items-center gap-3 px-3 py-2 text-xs font-semibold text-slate-500 hover:text-brand-navy transition">
-                <i data-lucide="external-link" class="w-4 h-4"></i>
-                Google Sheets Source
-            </a>
-            <div class="mt-4 p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-600 text-xs">
-                    MY
-                </div>
-                <div class="overflow-hidden">
-                    <p class="text-xs font-bold text-slate-800 truncate">Sage Master</p>
-                    <p class="text-[10px] text-slate-400 truncate">mhykmasterlist sync</p>
-                </div>
-            </div>
-        </div>
-    </aside>
+        <div id="grid" class="card-grid"></div>
+      </div>
 
-    <!-- MAIN CONTENT AREA -->
-    <main class="flex-1 ml-64 p-8 max-w-[1600px] min-h-screen">
-
-        <!-- HEADER BAR -->
-        <header class="flex items-center justify-between mb-8 gap-4">
-            <div class="relative flex-1 max-w-md">
-                <i data-lucide="search" class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                <input type="text" id="global-search" oninput="handleSearch(this.value)" placeholder="Search card by title, character, trait name..." class="w-full bg-white border border-slate-200/80 rounded-2xl pl-11 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 text-slate-800 placeholder-slate-400 shadow-sm transition">
-            </div>
-
-            <div class="flex items-center gap-3">
-                <button onclick="refreshData()" class="p-2.5 bg-white border border-slate-200/80 rounded-2xl hover:bg-slate-50 text-slate-600 transition shadow-sm flex items-center gap-2 text-xs font-semibold" title="Reload Sheet Data">
-                    <i data-lucide="refresh-cw" class="w-4 h-4" id="refresh-icon"></i>
-                    Sync Data
-                </button>
-                <div class="h-6 w-px bg-slate-200"></div>
-                <button class="p-2.5 bg-white border border-slate-200/80 rounded-2xl hover:bg-slate-50 text-slate-600 transition shadow-sm relative">
-                    <i data-lucide="bell" class="w-4 h-4"></i>
-                    <span class="w-2 h-2 bg-rose-500 rounded-full absolute top-2 right-2"></span>
-                </button>
-                <div class="flex items-center gap-2 bg-white border border-slate-200/80 rounded-2xl p-1.5 pr-3 shadow-sm">
-                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80" class="w-7 h-7 rounded-xl object-cover" alt="User">
-                    <span class="text-xs font-bold text-slate-700">Alyssa</span>
-                </div>
-            </div>
-        </header>
-
-        <!-- DASHBOARD VIEW -->
-        <div id="view-dashboard" class="space-y-8">
-
-            <!-- HERO CAROUSEL / PROGRESS BANNER -->
-            <div class="hero-gradient rounded-3xl p-8 text-white relative overflow-hidden shadow-xl flex flex-col md:flex-row justify-between gap-6">
-                <!-- Left text info -->
-                <div class="max-w-md flex flex-col justify-between z-10">
-                    <div>
-                        <span class="inline-block px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-xs font-medium text-amber-300 mb-4 border border-white/10">
-                            Party Trait Simulator
-                        </span>
-                        <h2 class="text-3xl font-extrabold tracking-tight mb-2 leading-tight">
-                            You have selected <span id="hero-party-count">0</span> of 5 Wizard Cards!
-                        </h2>
-                        <p class="text-slate-300 text-sm mb-6">
-                            Form your team to analyze card trait synergy combinations, leveled skills, and total attribute multipliers.
-                        </p>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <button onclick="switchTab('party')" class="bg-white text-slate-900 font-bold px-5 py-2.5 rounded-2xl text-xs hover:bg-amber-300 transition shadow-md flex items-center gap-2">
-                            Manage Party <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
-                        </button>
-                        <button onclick="clearParty()" class="bg-white/10 backdrop-blur-sm text-slate-200 hover:bg-white/20 font-semibold px-4 py-2.5 rounded-2xl text-xs transition">
-                            Reset Deck
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Right horizontal card preview pills (Matching design style) -->
-                <div class="flex gap-4 overflow-x-auto pb-2 pt-1 custom-scrollbar z-10 max-w-2xl">
-                    <!-- Slot 1 Card Widget -->
-                    <div id="hero-slot-0" class="w-48 shrink-0 bg-[#c3b1e1] text-slate-900 p-5 rounded-3xl flex flex-col justify-between shadow-lg relative transition hover:-translate-y-1">
-                        <div class="flex justify-between items-start">
-                            <span class="text-xs font-extrabold text-purple-900/60 uppercase">Slot 01</span>
-                            <span class="text-xs bg-white/50 px-2 py-0.5 rounded-full font-bold text-slate-800">SSR</span>
-                        </div>
-                        <div class="my-6">
-                            <i data-lucide="plus-circle" class="w-8 h-8 text-purple-900/40 mb-2"></i>
-                            <h4 class="font-bold text-base leading-snug">Select Card</h4>
-                            <p class="text-xs text-purple-950/60">Empty slot</p>
-                        </div>
-                        <div class="w-full bg-purple-950/20 h-1.5 rounded-full overflow-hidden">
-                            <div class="bg-purple-950 h-full w-0"></div>
-                        </div>
-                    </div>
-
-                    <!-- Slot 2 Card Widget -->
-                    <div id="hero-slot-1" class="w-48 shrink-0 bg-[#ffe5d9] text-slate-900 p-5 rounded-3xl flex flex-col justify-between shadow-lg relative transition hover:-translate-y-1">
-                        <div class="flex justify-between items-start">
-                            <span class="text-xs font-extrabold text-orange-900/60 uppercase">Slot 02</span>
-                            <span class="text-xs bg-white/50 px-2 py-0.5 rounded-full font-bold text-slate-800">SSR</span>
-                        </div>
-                        <div class="my-6">
-                            <i data-lucide="plus-circle" class="w-8 h-8 text-orange-900/40 mb-2"></i>
-                            <h4 class="font-bold text-base leading-snug">Select Card</h4>
-                            <p class="text-xs text-orange-950/60">Empty slot</p>
-                        </div>
-                        <div class="w-full bg-orange-950/20 h-1.5 rounded-full overflow-hidden">
-                            <div class="bg-orange-950 h-full w-0"></div>
-                        </div>
-                    </div>
-
-                    <!-- Slot 3 Card Widget -->
-                    <div id="hero-slot-2" class="w-48 shrink-0 bg-[#d8f5a2] text-slate-900 p-5 rounded-3xl flex flex-col justify-between shadow-lg relative transition hover:-translate-y-1">
-                        <div class="flex justify-between items-start">
-                            <span class="text-xs font-extrabold text-lime-900/60 uppercase">Slot 03</span>
-                            <span class="text-xs bg-white/50 px-2 py-0.5 rounded-full font-bold text-slate-800">SSR</span>
-                        </div>
-                        <div class="my-6">
-                            <i data-lucide="plus-circle" class="w-8 h-8 text-lime-900/40 mb-2"></i>
-                            <h4 class="font-bold text-base leading-snug">Select Card</h4>
-                            <p class="text-xs text-lime-950/60">Empty slot</p>
-                        </div>
-                        <div class="w-full bg-lime-950/20 h-1.5 rounded-full overflow-hidden">
-                            <div class="bg-lime-950 h-full w-0"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Background Subtle Glow -->
-                <div class="absolute -right-20 -bottom-20 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
-            </div>
-
-            <!-- STATS & SUMMARY SECTION -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <!-- Stat 1 -->
-                <div class="bg-white p-6 rounded-3xl border border-slate-100 card-elevated flex flex-col justify-between">
-                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Party Cards</span>
-                    <div class="my-3 flex items-baseline gap-2">
-                        <span id="stat-party-count" class="text-3xl font-extrabold text-slate-900">0</span>
-                        <span class="text-xs font-semibold text-slate-400">/ 5 Selected</span>
-                    </div>
-                    <div class="text-xs text-emerald-600 font-semibold flex items-center gap-1">
-                        <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
-                        Ready for trait calculation
-                    </div>
-                </div>
-
-                <!-- Stat 2 -->
-                <div class="bg-white p-6 rounded-3xl border border-slate-100 card-elevated flex flex-col justify-between">
-                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Unique Traits</span>
-                    <div class="my-3 flex items-baseline gap-2">
-                        <span id="stat-unique-traits" class="text-3xl font-extrabold text-slate-900">0</span>
-                        <span class="text-xs font-semibold text-slate-400">Traits Active</span>
-                    </div>
-                    <div class="text-xs text-indigo-600 font-semibold flex items-center gap-1">
-                        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
-                        Initial + Lvled Traits
-                    </div>
-                </div>
-
-                <!-- Stat 3 -->
-                <div class="bg-white p-6 rounded-3xl border border-slate-100 card-elevated flex flex-col justify-between">
-                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Calculated Combinations</span>
-                    <div class="my-3 flex items-baseline gap-2">
-                        <span id="stat-combinations" class="text-3xl font-extrabold text-slate-900">6,300</span>
-                        <span class="text-xs font-semibold text-slate-400">Schemes</span>
-                    </div>
-                    <div class="text-xs text-amber-600 font-semibold flex items-center gap-1">
-                        <i data-lucide="layers" class="w-3.5 h-3.5"></i>
-                        Based on reference formula
-                    </div>
-                </div>
-
-                <!-- Stat 4 Mini Graph Widget -->
-                <div class="bg-white p-6 rounded-3xl border border-slate-100 card-elevated flex flex-col justify-between">
-                    <div class="flex justify-between items-center">
-                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Attribute Distribution</span>
-                        <i data-lucide="pie-chart" class="w-4 h-4 text-slate-400"></i>
-                    </div>
-                    <div id="attribute-pills" class="flex flex-wrap gap-1.5 my-2">
-                        <span class="px-2 py-1 rounded-lg text-[10px] font-bold bg-rose-100 text-rose-700">Passion: 0</span>
-                        <span class="px-2 py-1 rounded-lg text-[10px] font-bold bg-blue-100 text-blue-700">Cool: 0</span>
-                        <span class="px-2 py-1 rounded-lg text-[10px] font-bold bg-amber-100 text-amber-700">Int: 0</span>
-                    </div>
-                    <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden flex" id="attribute-progress-bar">
-                        <div class="bg-rose-500 h-full" style="width: 20%"></div>
-                        <div class="bg-blue-500 h-full" style="width: 20%"></div>
-                        <div class="bg-amber-500 h-full" style="width: 20%"></div>
-                        <div class="bg-purple-500 h-full" style="width: 20%"></div>
-                        <div class="bg-emerald-500 h-full" style="width: 20%"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- BOTTOM CONTENT: QUICK CARD SELECT & ACTIVE TRAITS LIST -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                
-                <!-- Left 2 Cols: Card Selector List -->
-                <div class="lg:col-span-2 bg-white rounded-3xl p-6 border border-slate-100 card-elevated">
-                    <div class="flex items-center justify-between mb-6">
-                        <div>
-                            <h3 class="font-bold text-lg text-slate-900">Available Cards</h3>
-                            <p class="text-xs text-slate-400">Select cards from your loaded database to add to your 5-card party</p>
-                        </div>
-                        <div class="flex gap-2">
-                            <select id="filter-rarity" onchange="applyFilters()" class="bg-slate-50 border border-slate-200 text-xs font-semibold rounded-xl px-3 py-2 text-slate-600 outline-none">
-                                <option value="">All Rarities</option>
-                                <option value="SSR">SSR</option>
-                                <option value="SR">SR</option>
-                                <option value="R">R</option>
-                                <option value="N">N</option>
-                            </select>
-                            <select id="filter-attribute" onchange="applyFilters()" class="bg-slate-50 border border-slate-200 text-xs font-semibold rounded-xl px-3 py-2 text-slate-600 outline-none">
-                                <option value="">All Attributes</option>
-                                <option value="Passion">Passion (Red)</option>
-                                <option value="Cool">Cool (Blue)</option>
-                                <option value="Intelligent">Intelligent (Yellow)</option>
-                                <option value="Brave">Brave (Purple)</option>
-                                <option value="Happy">Happy (Green)</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Cards Table / Grid -->
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="text-[11px] font-bold text-slate-400 uppercase border-b border-slate-100">
-                                    <th class="pb-3 pl-2">Card Info</th>
-                                    <th class="pb-3">Character</th>
-                                    <th class="pb-3">Initial Traits</th>
-                                    <th class="pb-3">Lvled Traits</th>
-                                    <th class="pb-3 text-right pr-2">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="cards-table-body" class="divide-y divide-slate-100 text-xs">
-                                <!-- Dynamic rows populated via JS -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Right 1 Col: Active Party Traits & Analysis -->
-                <div class="bg-white rounded-3xl p-6 border border-slate-100 card-elevated flex flex-col justify-between">
-                    <div>
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="font-bold text-lg text-slate-900">Party Synergy Traits</h3>
-                            <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-bold" id="trait-tag-count">0 Traits</span>
-                        </div>
-                        <p class="text-xs text-slate-400 mb-4">Consolidated traits gathered from all cards currently placed in the party.</p>
-                        
-                        <div id="party-traits-container" class="flex flex-wrap gap-2 max-h-[400px] overflow-y-auto custom-scrollbar pr-1">
-                            <div class="text-center py-8 w-full text-slate-400 text-xs">
-                                <i data-lucide="layers-slash" class="w-8 h-8 mx-auto mb-2 opacity-40"></i>
-                                No cards added to the party yet.<br>Click "Add to Party" on any card to view traits.
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mt-6 pt-4 border-t border-slate-100">
-                        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                            <div class="flex items-center justify-between text-xs font-bold text-slate-700 mb-1">
-                                <span>Attribute-Matched Synergy Bonus</span>
-                                <span class="text-indigo-600" id="matched-synergy-rate">0% Multiplier</span>
-                            </div>
-                            <p class="text-[11px] text-slate-400">
-                                Calculates exact rarity (4★ & 3★) and matching attribute bonuses based on the Traits Sheet.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
+      <div class="side-stack">
+        <div class="panel">
+          <h3>パーティ</h3>
+          <div class="sub">最大5枚まで選択できます</div>
+          <div id="partySlots" class="party-slots"></div>
+          <button class="reset-link" onclick="resetParty()">パーティをリセット</button>
         </div>
 
-        <!-- PARTY BUILDER TAB -->
-        <div id="view-party" class="hidden space-y-8">
-            <div class="bg-white p-8 rounded-3xl border border-slate-100 card-elevated">
-                <div class="flex items-center justify-between mb-6">
-                    <div>
-                        <h2 class="text-2xl font-bold text-slate-900">5-Card Party Builder</h2>
-                        <p class="text-xs text-slate-500">Configure your primary 5 cards to analyze trait synergy and target skills</p>
-                    </div>
-                    <button onclick="clearParty()" class="px-4 py-2 bg-rose-50 text-rose-600 text-xs font-bold rounded-xl hover:bg-rose-100 transition">
-                        Clear All Cards
-                    </button>
-                </div>
-
-                <!-- 5 Slots Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-5 gap-4" id="party-builder-grid">
-                    <!-- Filled dynamically -->
-                </div>
-            </div>
-
-            <!-- Detailed Trait Breakdown for Current Party -->
-            <div class="bg-white p-8 rounded-3xl border border-slate-100 card-elevated">
-                <h3 class="font-bold text-lg text-slate-900 mb-4">Detailed Trait Breakdown</h3>
-                <div id="detailed-traits-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <!-- Dynamic -->
-                </div>
-            </div>
+        <div class="panel" id="detailPanel">
+          <h3>特性</h3>
+          <div class="sub">カードを選ぶと表示されます</div>
+          <div id="detailBody"></div>
         </div>
 
-        <!-- CARD DATABASE TAB -->
-        <div id="view-database" class="hidden space-y-6">
-            <div class="bg-white p-8 rounded-3xl border border-slate-100 card-elevated">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <h2 class="text-2xl font-bold text-slate-900">Mahoyaku Card Database</h2>
-                            <span class="bg-amber-100 text-amber-900 text-xs px-3 py-1 rounded-full font-bold">4★ & 3★ Filter Active</span>
-                        </div>
-                        <p class="text-xs text-slate-500 mt-1">Catalog strictly displaying 4★ (SR) and 3★ (R) wizard cards</p>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <input type="text" id="db-search" oninput="applyFilters()" placeholder="Filter database..." class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-xs text-slate-800 outline-none w-64">
-                    </div>
-                </div>
-
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="text-[11px] font-bold text-slate-400 uppercase border-b border-slate-100">
-                                <th class="pb-3 pl-3">ID</th>
-                                <th class="pb-3">Title [EN]</th>
-                                <th class="pb-3">Character</th>
-                                <th class="pb-3">Rarity & Att</th>
-                                <th class="pb-3">Initial Traits</th>
-                                <th class="pb-3">Lvled Traits</th>
-                                <th class="pb-3 text-right pr-3">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="full-database-body" class="divide-y divide-slate-100 text-xs">
-                            <!-- Dynamic -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+        <div class="panel">
+          <h3>合計ポイント</h3>
+          <div class="points-total" id="pointsTotal">0</div>
+          <div class="points-breakdown" id="pointsBreakdown"></div>
+          <div class="points-formula">
+            🔧 これはサンプルの計算式です（★×250 + 同属性ボーナス300）。実際のスコアリング方式が決まり次第、差し替えてください。
+          </div>
         </div>
+      </div>
+    </div>
+  </section>
 
-        <!-- TRAITS MATRIX TAB (NEW) -->
-        <div id="view-traits" class="hidden space-y-6">
-            <div class="bg-white p-8 rounded-3xl border border-slate-100 card-elevated">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                    <div>
-                        <h2 class="text-2xl font-bold text-slate-900">Traits Sheet Matrix</h2>
-                        <p class="text-xs text-slate-500">Separated by Attribute (Passion, Cool, Intelligent, Brave, Happy) and Rarity Tier (4★ / 3★)</p>
-                    </div>
-                    <div class="flex gap-2">
-                        <select id="trait-attr-filter" onchange="renderTraitsMatrix()" class="bg-slate-50 border border-slate-200 text-xs font-semibold rounded-xl px-3 py-2 text-slate-600 outline-none">
-                            <option value="">All Attributes</option>
-                            <option value="Passion">Passion</option>
-                            <option value="Cool">Cool</option>
-                            <option value="Intelligent">Intelligent</option>
-                            <option value="Brave">Brave</option>
-                            <option value="Happy">Happy</option>
-                        </select>
-                        <select id="trait-rarity-filter" onchange="renderTraitsMatrix()" class="bg-slate-50 border border-slate-200 text-xs font-semibold rounded-xl px-3 py-2 text-slate-600 outline-none">
-                            <option value="">All Rarities</option>
-                            <option value="4★">4★ (SR)</option>
-                            <option value="3★">3★ (R)</option>
-                        </select>
-                    </div>
-                </div>
+  <section id="about">
+    <div class="section-head">
+      <div class="kicker">About this data</div>
+      <h2>このサイトについて</h2>
+      <p>
+        カードのタイトル・キャラクター・レアリティ・属性は、共有いただいたスプレッドシートの実データを使用しています。
+        一方で「特性（Initial Traits / LvledTraits）」の列は現時点で未入力だったため、
+        Traits タブにある属性×レベル別の候補プールから、カードごとに機械的にサンプルを割り当てています。
+        実際の特性データが揃い次第、このサンプルロジックを本物のマッピングに置き換えられます。
+      </p>
+    </div>
+  </section>
 
-                <div id="traits-matrix-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <!-- Dynamic Trait Cards -->
-                </div>
-            </div>
+</main>
+
+<footer>
+  <div class="wrap foot-row">
+    <div class="logo">
+      <div class="blob"><div class="eyes"><span></span><span></span></div></div>
+      <div>パーティピッカー</div>
+    </div>
+    <p class="foot-note">静的デモサイト。特性データはサンプルです。カード情報はスプレッドシートの v1 / v2 シートに基づきます（合計 196 枚 / SSR+SR のみ表示）。</p>
+  </div>
+</footer>
+
+<script>
+/* ============ DATA: real card metadata (v1 + v2 tabs) ============ */
+/* [id, en title, jp title, character, rarity, attribute] */
+const RAW = [
+[1,"Wizard of Central Country","中央の魔法使い","Oz","N","Ha"],
+[2,"Wanting to Express Gratitude","感謝を伝えたくて","Oz","R","Pa"],
+[3,"What Lies in That Line of Sight","視線の先にいるもの","Oz","R","Co"],
+[4,"The Reason for His Slumber","彼が眠っている理由","Oz","SR","Re"],
+[5,"The Best Medicine","一番の特効薬","Oz","SR","Ha"],
+[6,"Appearing in the Silvery World","白銀の世界に現れる","Oz","SSR","Pr"],
+[7,"Wizard of central country","中央の魔法使い","Arthur","N","Ha"],
+[8,"The Prince Who Dries Your Tears","涙を拭う王子様","Arthur","R","Co"],
+[9,"Hidden Effort","努力は人知れず","Arthur","R","Pr"],
+[10,"Always Trying His Best","いつだって一生懸命","Arthur","SR","Pa"],
+[11,"Leave the Chores to Me","雑務もお任せください","Arthur","SR","Re"],
+[12,"For the Sake of the People","民のために","Arthur","SSR","Ha"],
+[13,"Wizard of central country","中央の魔法使い","Cain","N","Co"],
+[14,"But I Just Said What I Really Meant","本音を言ったのに","Cain","R","Re"],
+[15,"Leave the Heavy Lifting to Me","力仕事はお任せ","Cain","R","Ha"],
+[16,"Was I Mistaken?","見間違い？","Cain","SR","Pr"],
+[17,"Secretive Night","秘密の夜","Cain","SR","Pa"],
+[18,"Never, Ever Again!","もう二度と、絶対に","Cain","SSR","Re"],
+[19,"Wizard of central country","中央の魔法使い","Riquet","N","Re"],
+[20,"Having Coffee for the First Time","初めてのコーヒー","Riquet","R","Pr"],
+[21,"Let's Do Our Best Together!","一緒に頑張りましょう！","Riquet","R","Re"],
+[22,"Cheeks You Want to Pinch","つまみたくなるほっぺ","Riquet","SR","Ha"],
+[23,"In the Middle of Studying","まだまだ勉強途中","Riquet","SR","Co"],
+[24,"Because You Were There for Me","あなたがいてくれたから","Riquet","SSR","Pa"],
+[25,"Wizard of the north","北の魔法使い","Snow","N","Pa"],
+[26,"Which Is Which?","どっちがどっち？","Snow","R","Ha"],
+[27,"Matching Brooches","お揃いブローチ","Snow","R","Pa"],
+[28,"Let's Convey the Prophecy","予言を授けよう","Snow","SR","Pr"],
+[29,"The Prankster's True Form","悪戯っ子の正体","Snow","SR","Re"],
+[30,"Drifting Through the Night Sky","夜空に浮かぶ","Snow","SSR","Co"],
+[31,"Wizard of the north","北の魔法使い","White","N","Pr"],
+[32,"Gentle Warmth","優しい体温","White","R","Re"],
+[33,"Expert Tease","からかい上手","White","R","Co"],
+[34,"Chu Chu Panic","ちゅーちゅーパニック","White","SR","Co"],
+[35,"Good Boys Deserve Presents!","良い子にはご褒美じゃ！","White","SR","Ha"],
+[36,"Outstretched Hand","差し出された手","White","SSR","Pa"],
+[37,"Wizard of the north","北の魔法使い","Mithra","N","Pr"],
+[38,"The Suspicious Teacup","訝しげティーカップ","Mithra","R","Re"],
+[39,"Drenched Ladykiller","水濡れ色男","Mithra","R","Ha"],
+[40,"Please Stick to the Recommended Use and Dosage","用法用量をお守りください","Mithra","SR","Co"],
+[41,"A Provocative Moment","刺激的なひとときを","Mithra","SR","Pa"],
+[42,"Uninvited Guest","招かれざる客","Mithra","SSR","Pr"],
+[43,"Wizard of the north","北の魔法使い","Owen","N","Pa"],
+[44,"Delightful Biscuit","ご機嫌ビスケット","Owen","R","Co"],
+[45,"Eyes That Hide Their True Intentions","真意を見せない瞳","Owen","R","Pa"],
+[46,"A Gentle Moment","優しい時間","Owen","SR","Ha"],
+[47,"Just as Planned","計画通り","Owen","SR","Pr"],
+[48,"Bewitching Smile","妖艶にお笑う","Owen","SSR","Re"],
+[49,"Wizard of the north","北の魔法使い","Bradley","N","Ha"],
+[50,"Blanket for Fatigue","気怠げブランケット","Bradley","R","Pr"],
+[51,"Piping Hot Porridge","あつあつおじや","Bradley","R","Pa"],
+[52,"Found Something Good","いいもんみっけ","Bradley","SR","Re"],
+[53,"Just as You Asked For","お望み通りに","Bradley","SR","Pr"],
+[54,"Bandit Group of Death","死の盗賊団","Bradley","SSR","Co"],
+[55,"Wizard of the East","東の魔法使い","Faust","N","Ha"],
+[56,"A Side I Show Only to You","君だけに見せる顔","Faust","R","Pr"],
+[57,"Surreptitiously Examining","こっそり吟味中","Faust","R","Ha"],
+[58,"Reliable Student","頼もしい生徒","Faust","SR","Co"],
+[59,"The Hexer's Smile","呪い屋の微笑み","Faust","SR","Pa"],
+[60,"A Spell to Quell the Dead","鎮魂の呪文","Faust","SSR","Re"],
+[61,"Wizard of the East","東の魔法使い","Shino","N","Co"],
+[62,"Pinky Promise","ゆびきりげんまん","Shino","R","Ha"],
+[63,"Glowing Beacon","灯る道しるべ","Shino","R","Pr"],
+[64,"Warm Dawn","暖かな夜明け","Shino","SR","Re"],
+[65,"Guaranteed Reward","報酬はもちろん","Shino","SR","Pa"],
+[66,"A Friend I Can Be Proud Of","自慢な友達","Shino","SSR","Co"],
+[67,"Wizard of the East","東の魔法使い","Heathcliff","N","Co"],
+[68,"Soothing Gaze","癒しの眼差し","Heathcliff","R","Pa"],
+[69,"A New Breath","新たな息吹を","Heathcliff","R","Pr"],
+[70,"Sudden Awakening","刺激的な目覚め","Heathcliff","SR","Re"],
+[71,"Morning's Best Helper","朝一番のお手伝い","Heathcliff","SR","Ha"],
+[72,"The Wizard's Sugar","魔法使いのシュガー","Heathcliff","SSR","Pr"],
+[73,"Wizard of the East","東の魔法使い","Nero","N","Pa"],
+[74,"Bon Appetit","召し上がれ","Nero","R","Re"],
+[75,"It's Tough Being the Eldest","年長者の苦労","Nero","R","Co"],
+[76,"Choosing the Right Ingredients Is Essential","食材選びが肝心","Nero","SR","Pa"],
+[77,"Baptism of Onions","玉ねぎの洗礼","Nero","SR","Pr"],
+[78,"Skilled Handiwork","華麗な手さばき","Nero","SSR","Ha"],
+[79,"Wizard of the West","西の魔法使い","Shylock","N","Pa"],
+[80,"Like a Certain Someone, Somewhere","どこかの誰かのように","Shylock","R","Ha"],
+[81,"How About a Match?","一戦いかがですか？","Shylock","R","Pr"],
+[82,"Moonlit Secrets","月下の秘め事","Shylock","SR","Re"],
+[83,"How About You Join Me","あなたもご一緒に","Shylock","SR","Co"],
+[84,"The Etched One","刻まれたもの","Shylock","SSR","Co"],
+[85,"Wizard of the West","西の魔法使い","Murr","N","Pa"],
+[86,"Beckoning Kitty","真似っこにゃんこ","Murr","R","Re"],
+[87,"Taking Aim","狙いを定めて","Murr","R","Co"],
+[88,"Commence Pursuit","追跡開始","Murr","SR","Ha"],
+[89,"A New Game","新しい遊び","Murr","SR","Pr"],
+[90,"A Wave of Jewelled Petals","花かけらの波","Murr","SSR","Pa"],
+[91,"Wizard of the West","西の魔法使い","Chloe","N","Re"],
+[92,"Leave the Sewing to Me","裁縫ならお任せ","Chloe","R","Pr"],
+[93,"Enveloped in Warmth","暖かさで包み込んで","Chloe","R","Co"],
+[94,"Like a Pet Cat","借りてきた猫のように","Chloe","SR","Pa"],
+[95,"Haphazard Steps","はちゃめちゃステップ","Chloe","SR","Pa"],
+[96,"Matching Presents","お揃いのプレゼント","Chloe","SSR","Ha"],
+[97,"Wizard of the West","西の魔法使い","Rustica","N","Pr"],
+[98,"Perched on the Gentleman's Arm","紳士の腕には","Rustica","R","Ha"],
+[1008,"A Toast in the Private Loge","秘密のロージェで乾杯","Bradley","SSR","Pr"],
+[1009,"May I Have this Dance?","ボクと踊ってくれますか？","Mitile","SSR","Ha"],
+[1010,"Soaring in Unfettered Skies","自由の空にきみと羽ばたき","Riquet","SSR","Pr"],
+[1011,"Kindness as the Ultimate Seasoning","とびきりの味は優しさと共に","Nero","SSR","Ha"],
+[1012,"Healing Light for Lost Infants","迷える幼子に癒しの光を","Figaro","SSR","Re"],
+[1013,"The Demon Lord's Great Adventure?","魔王様の大冒険？","Oz","SR","Ha"],
+[1014,"Avert your Eyes from the Truth","真相に瞳を伏せ","Faust","SR","Pr"],
+[1015,"Wipe Away the Glistening Sweat","輝く汗を拭って","Lennox","SR","Re"],
+[1016,"Identifying the Cutesy Fungi","キュートなキノコの正体は","Arthur","R","Re"],
+[1017,"Wanna Try Harvesting'em?","収穫してみる？","Murr","R","Ha"],
+[1018,"A Smile as Sweet as Candy","お菓子のように甘く微笑み","Owen","SSR","Pa"],
+[1019,"A Wish to Melt the Frost Away","氷溶かす願いをここに","Heathcliff","SSR","Re"],
+[1020,"Gaze into the Wish's Ember","願いの灯火を見つめて","Lennox","SSR","Co"],
+[1021,"At the Snowstorm Fae's Abode","吹雪の妖精の住処で","Oz","SR","Co"],
+[1022,"The You From Back Then","あの頃のおまえは","Shino","SR","Re"],
+[1023,"Let's Go Where Everyone's Waiting!","待つ人のいる場所へ","Rutile","SR","Pa"],
+[1024,"Adornments of Snow and Frost","霜と雪の飾り付けを","Cain","R","Co"],
+[1025,"How Should We Arrange It?","どこに飾りましょうか","Shylock","R","Re"],
+[1026,"Peaceful Moments For You","穏やかな時間をあなたへ","Faust","SSR","Pr"],
+[1027,"A World Brimming with Friends","友達のいる世界へ","Cain","SSR","Ha"],
+[1028,"A World Brimming with Friends","友達のいる世界へ","Snow","SSR","Pr"],
+[1029,"A World Brimming with Friends","友達のいる世界へ","White","SSR","Pa"],
+[1030,"A World Brimming with Friends","友達のいる世界へ","Shino","SSR","Re"],
+[1031,"A World Brimming with Friends","友達のいる世界へ","Nero","SSR","Pa"],
+[1032,"A World Brimming with Friends","友達のいる世界へ","Chloe","SSR","Ha"],
+[1033,"A World Brimming with Friends","友達のいる世界へ","Figaro","SSR","Co"],
+[1034,"Heavenly Blessings For You, My Friend","我が友に最大の加護を","Arthur","SSR","Pr"],
+[1035,"An Offering to this Cup","この杯に贄を捧ぐ","Faust","SSR","Co"],
+[1036,"Brandish Towards Heroism","英雄に至る一閃","Shino","SSR","Pa"],
+[1037,"Come, Sacrificium","おいで、サクリフィキウム","White","SR","Pr"],
+[1038,"Dripping Honeyed Smile","糖蜜の笑みを浮かべ","Shylock","SR","Pa"],
+[1039,"They Who Vanquish Ancient Fiends","古の魔を打ち破るもの","Murr","SR","Co"],
+[1040,"Thwarting Monstrosities","怪物を避けるのは","Oz","R","Pa"],
+[1041,"First-Rate Garlic Ring","特製ガーリックリング","Mitile","R","Co"],
+[1042,"Isn't This A Splendid Performance?","うまく弾けてるでしょう？","Mithra","SSR","Pr"],
+[1043,"Let's Rev It Up!","うきうきの一曲を始めよう！","Murr","SSR","Co"],
+[1044,"For You the Snowdrops Twinkle","六花の煌めきをあなたへ","Mithra","SSR","Pa"],
+[1045,"The Infatuated Beast of the North","北の獣が惚れるのは","Bradley","SSR","Re"],
+[1046,"Cheers to the Ruby Heart","真紅のハートに乾杯","Mitile","SSR","Co"],
+[1047,"A Drink that Invites Inebriation","酩酊を誘う一杯","Nero","SR","Re"],
+[1048,"Shattered Secrets Unravelled","砕けた秘密を紐解いて","Murr","SR","Pa"],
+[1049,"Overflowing Cynicism","溢れ出る冷笑","Figaro","SR","Co"],
+[1050,"A Pose for a Cutie!","かわいいのポーズ！","Snow","R","Co"],
+[1051,"Present Look-alike","プレゼントみたいに","Rustica","R","Re"],
+[1052,"A Starlight Melody Graces My Fingertips","この手に星光の調べを","Arthur","SSR","Re"],
+[1053,"Let's Compose A Thrilling Aria","心躍る旋律を綴って","Rustica","SSR","Pa"],
+[1054,"Temper the Viridian Spirit","翠黛の精霊を従えて","Oz","SSR","Co"],
+[1055,"A View Afflicted with Lament","別れの道を憂う瞳","Shino","SSR","Pr"],
+[1056,"Concealed Between Harsh Words","厳しさの奥に隠したもの","Nero","SSR","Ha"],
+[1057,"His Mellow Celeste Gaze","青い眼差しは柔らかく","Arthur","SR","Pr"],
+[1058,"Hear the Whispers of the Foliage","木の葉の囁きを聞いて","Rustica","SR","Ha"],
+[1059,"Before the Divergent Paths","その道の分かれ目で","Mitile","SR","Co"],
+[1060,"Magnificent Piece","会心の一品","White","R","Co"],
+[1061,"Fittin' Aesthetics","審美眼にかなうのは","Bradley","R","Ha"],
+[1062,"You're Finally Awake?","ほら、起きて？","Owen","SSR","Pr"],
+[1063,"Fledgling's Soft Smile","青年は淡く笑んで","Faust","SSR","Ha"],
+[1064,"A Peaceful Rest in a Bed of Lavenders","紫花に安らぎの眠りを","Rutile","SSR","Re"],
+[1065,"Royal Personal Escort","王子直伝エスコート","Arthur","SR","Re"],
+[1066,"A Wish's Whereabouts","その願いの行方は","Mithra","SR","Pr"],
+[1067,"If You Hold My Warm Hand","温かな手を繋げば","Chloe","SR","Ha"],
+[1068,"Sweet, Invigorating Bite","甘く爽やかなひと口を","Heathcliff","R","Re"],
+[1069,"Much Obliged Mail Carrier","配達ご苦労様","Figaro","R","Pr"],
+[1070,"A World Brimming with Friends","友達のいる世界へ","Arthur","SSR","Pa"],
+[1071,"A World Brimming with Friends","友達のいる世界へ","Riquet","SSR","Re"],
+[1072,"A World Brimming with Friends","友達のいる世界へ","Mithra","SSR","Re"],
+[1073,"A World Brimming with Friends","友達のいる世界へ","Bradley","SSR","Co"],
+[1074,"A World Brimming with Friends","友達のいる世界へ","Heathcliff","SSR","Ha"],
+[1075,"A World Brimming with Friends","友達のいる世界へ","Murr","SSR","Pr"],
+[1076,"A World Brimming with Friends","友達のいる世界へ","Lennox","SSR","Pr"],
+[1077,"Melody Heralded by Spring's Storm","春嵐が運ぶメロディ","Oz","SSR","Ha"],
+[1078,"Learning the Ropes of Waltzing","ワルツの波を乗りこなし","Shino","SSR","Pa"],
+[1079,"A Solemn Vow Under the Moonlit Rain","月時雨に切なる誓いを","Snow","SSR","Ha"],
+[1080,"Askin' for Hell, Are You?","荒事をご所望かな？","Heathcliff","SSR","Pr"],
+[1081,"Hospitality in a City of Crimson Haze","紅煙けぶる街の歓待","Shylock","SSR","Pa"],
+[1082,"The Swordsman's Fearless Grin","剣豪は不敵に笑い","Cain","SR","Ha"],
+[1083,"Where the Shengbiao's Wielder Glares","暗器使いが睨める先","Riquet","SR","Pa"],
+[1084,"Bewitching Welcoming","来客を妖しく迎えて","Owen","SR","Pr"],
+[1085,"Concealed in the Holster","ホルスターに忍ばせて","Arthur","R","Ha"],
+[1086,"The Delinquent of Ventisca","ベンティスカの暴れん坊","Mithra","R","Pr"],
+[1087,"Shinies Found!","ぴかぴか見ーつけた！","Murr","R","Pa"],
+[1088,"Like A Merciless Lord","冷酷な主人のように","Snow","SSR","Pa"],
+[1089,"Like A Generous Butler","甘やかな執事のように","Rustica","SSR","Co"],
+[1090,"Pot with Gallons of Sugar","ポットに沈める甘さ","Owen","R","Pa"],
+[1091,"This Way, Dear Guests","お客様、こちらへ","Heathcliff","R","Co"],
+[1092,"Elegy for the Grand Guignol","グラン・ギニョルに挽歌を","Owen","SSR","Pa"],
+[1093,"Delusions that Remold Tragedies","悲劇を変える絵空事","Rustica","SSR","Pr"],
+[1094,"Performing A Sweeter Tale","優しい虚構を演じて","Lennox","SSR","Co"],
+[1095,"Words of the Deceitful Clown","嘘つきピエロの言葉は","Faust","SR","Pa"],
+[1096,"Following His Cautious Gaze","警戒にじむ視線の先","Nero","SR","Pr"],
+[1097,"Puppet Gossip","パペットコミュニケート","Chloe","SR","Co"],
+[1098,"Perfect Bullseye","オレの最高得点","Shino","R","Co"],
+[1099,"Unstoppable Magicks","止まらぬマジック","Mitile","R","Pr"],
+[1100,"Celebration in Rhythm We Share!","我らと祝いのリズムを！","Snow","SSR","Co"],
+[1101,"Celebration in Melody We Share!","我らと祝いのメロディを！","White","SSR","Ha"],
+[1102,"With You on this Verdant Lush Night","あなたと、新緑の夜に","Lennox","SSR","Re"],
+[1103,"Intercepted by an Amethyst Bolt","迎え撃つは紫電の一閃","Mithra","SSR","Pa"],
+[1104,"Clench the Jade Flames and... Fire!","狙い撃つは緑炎の鉄拳","Mitile","SSR","Pr"],
+[1105,"Wanna Test Yar Brawn?","腕っぷしには自信あり？","Nero","R","Pr"]
+];
+
+const STAR = {N:1,R:2,SR:3,SSR:4};
+
+/* Attribute display config: JP name + palette color */
+const ATTR = {
+  Pa:{name:"Passion", jp:"情熱", color:"var(--pink)"},
+  Ha:{name:"Happy",   jp:"陽気", color:"var(--peach)"},
+  Re:{name:"Relax",   jp:"安らぎ", color:"var(--mint)"},
+  Co:{name:"Cool",    jp:"冷静", color:"var(--sky)"},
+  Pr:{name:"Pride",   jp:"誇り", color:"var(--lavender)"}
+};
+
+/* Real trait vocabulary pool, from the "Traits" tab: pool[attr][level] = [words] */
+const POOL = {
+  Pa:{4:["勇気","愛情","勝利","破天荒","夢中"],
+      3:["希望","情熱","熱血","絢爛","審美眼","豪奢","独創"],
+      2:["派手","閃き","活力","奇抜","熱狂","多才","酔狂"],
+      1:["積極","元気","自信","愉快","気まま"]},
+  Ha:{4:["神聖","正義","威厳","勇敢","不屈"],
+      3:["信念","祝福","純粋","貫禄","指導力","栄誉","理想"],
+      2:["清潔","平和","公正","克己","先導","素直","邁進"],
+      1:["真面目","正直","無垢","健気","忍耐"]},
+  Re:{4:["自然","幸運","再生","真心","団結"],
+      3:["堅実","古風","楽観","愛着","親密","朴訥","柔和"],
+      2:["我慢","癒し","安定","共栄","友好","天然","自適"],
+      1:["安らぎ","爽やか","頑固","素朴","大らか"]},
+  Co:{4:["信頼","誠実","残酷","高潔","慎重"],
+      3:["知性","忠実","自由","感傷","質実","几帳面","謙虚"],
+      2:["繊細","優しさ","広大","浄化","物憂げ","厚情","同調"],
+      1:["寂しさ","内気","冷静","閑寂","平穏"]},
+  Pr:{4:["神秘","優雅","高貴","矜持","強者"],
+      3:["意地悪","芸術","奔放","強靭","執着","君臨","鮮烈"],
+      2:["陽気","魅力","上品","自尊心","不敵","精悍","豪胆"],
+      1:["孤独","二面性","色気","獰猛","野生"]}
+};
+
+/* Build full card objects, filtered to SSR + SR only for the picker */
+const CARDS = RAW
+  .map(([id,en,jp,character,rarity,attr])=>({id,en,jp,character,rarity,attr,star:STAR[rarity]}))
+  .filter(c => c.rarity === "SSR" || c.rarity === "SR");
+
+/* Deterministic placeholder trait assignment: pick 2 sample words per card
+   from the real vocabulary pool for that card's attribute + star level. */
+function sampleTraits(card){
+  const lvl = card.star; // 4 for SSR, 3 for SR
+  const list = POOL[card.attr][lvl];
+  const a = list[card.id % list.length];
+  const b = list[(card.id + 3) % list.length];
+  const words = a === b ? [a] : [a,b];
+  return words.map(w => ({word:w, attr:card.attr, level:lvl}));
+}
+
+/* ============ STATE ============ */
+let activeRarities = new Set(["SSR","SR"]);
+let party = []; // array of card objects, max 5
+let detailCard = null;
+
+/* ============ INIT: populate filter dropdowns + legend ============ */
+function init(){
+  const chars = [...new Set(CARDS.map(c=>c.character))].sort();
+  const charSel = document.getElementById('charFilter');
+  charSel.innerHTML = '<option value="">全キャラクター</option>' +
+    chars.map(c=>`<option value="${c}">${c}</option>`).join('');
+
+  const attrSel = document.getElementById('attrFilter');
+  attrSel.innerHTML = '<option value="">全属性</option>' +
+    Object.entries(ATTR).map(([k,v])=>`<option value="${k}">${v.jp} ${v.name}</option>`).join('');
+
+  const legend = document.getElementById('legend');
+  legend.innerHTML = Object.entries(ATTR).map(([k,v])=>
+    `<div class="tag"><span class="swatch" style="background:${v.color}"></span>${v.jp} · ${v.name}</div>`
+  ).join('');
+
+  renderGrid();
+  renderParty();
+  renderDetail();
+  renderPoints();
+}
+
+/* ============ RENDER: card grid ============ */
+function renderGrid(){
+  const grid = document.getElementById('grid');
+  const search = document.getElementById('search').value.trim().toLowerCase();
+  const char = document.getElementById('charFilter').value;
+  const attr = document.getElementById('attrFilter').value;
+
+  const filtered = CARDS.filter(c=>{
+    if(!activeRarities.has(c.rarity)) return false;
+    if(char && c.character !== char) return false;
+    if(attr && c.attr !== attr) return false;
+    if(search){
+      const hay = (c.en+" "+c.jp+" "+c.character).toLowerCase();
+      if(!hay.includes(search)) return false;
+    }
+    return true;
+  });
+
+  document.getElementById('resultCount').textContent = `${filtered.length} 件`;
+
+  if(filtered.length === 0){
+    grid.innerHTML = `<div class="empty-state">
+      <div class="blob"><div class="eyes"><span></span><span></span></div></div>
+      条件に一致するカードが見つかりませんでした。
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = filtered.map(c=>{
+    const selected = party.some(p=>p.id===c.id);
+    const disabled = !selected && party.length>=5;
+    const a = ATTR[c.attr];
+    return `
+      <button class="card-tile" data-selected="${selected}" data-disabled="${disabled}"
+        onclick="handleCardClick(${c.id})">
+        <div class="card-icon" style="background:${a.color}">
+          <span class="rarity-pip ${c.rarity.toLowerCase()}">${c.rarity}</span>
+          <span class="star-pip">${"✧".repeat(c.star)}</span>
+          <div class="blob"><div class="eyes"><span></span><span></span></div></div>
         </div>
-
-        <!-- COMBINATORICS CALCULATOR TAB -->
-        <div id="view-calculator" class="hidden space-y-8">
-            <div class="bg-white p-8 rounded-3xl border border-slate-100 card-elevated max-w-4xl">
-                <h2 class="text-2xl font-bold text-slate-900 mb-2">Trait Combinatorics & Rarity Math Engine</h2>
-                <p class="text-xs text-slate-500 mb-6">Mathematical proof incorporating exact 4★ and 3★ card attribute distribution matrices</p>
-
-                <div class="space-y-6">
-                    <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200/80 space-y-4">
-                        <h4 class="font-bold text-sm text-slate-800 flex items-center gap-2">
-                            <span class="w-6 h-6 rounded-full bg-brand-navy text-white text-xs flex items-center justify-center">1</span>
-                            Attribute-Matched Trait Weighting
-                        </h4>
-                        <p class="text-xs text-slate-600 leading-relaxed">
-                            When evaluating 4★ (SR) and 3★ (R) cards, matching a wizard card's attribute (Passion, Cool, Intelligent, Brave, Happy) to its corresponding trait group applies an exact scaling multiplier ($\times 1.25$ for 4★, $\times 1.10$ for 3★).
-                        </p>
-                    </div>
-
-                    <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200/80 space-y-4">
-                        <h4 class="font-bold text-sm text-slate-800 flex items-center gap-2">
-                            <span class="w-6 h-6 rounded-full bg-brand-navy text-white text-xs flex items-center justify-center">2</span>
-                            A-Trait Partition Combinations
-                        </h4>
-                        <p class="text-xs text-slate-600 leading-relaxed">
-                            For 5 remaining A-Traits divided into groups $\{1, 1, 1, 2\}$, the number of possible partitions is:
-                        </p>
-                        <div class="bg-white p-3 rounded-xl border border-slate-200 font-mono text-xs text-slate-800">
-                            $\binom{5}{2} = 10 \text{ possibilities}$
-                        </div>
-                    </div>
-
-                    <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200/80 space-y-4">
-                        <h4 class="font-bold text-sm text-slate-800 flex items-center gap-2">
-                            <span class="w-6 h-6 rounded-full bg-brand-navy text-white text-xs flex items-center justify-center">3</span>
-                            B-Trait Partition Combinations
-                        </h4>
-                        <p class="text-xs text-slate-600 leading-relaxed">
-                            For 7 B-Traits partitioned into $\{2, 2, 2, 1\}$, accounting for 3 duplicate size-2 groups:
-                        </p>
-                        <div class="bg-white p-3 rounded-xl border border-slate-200 font-mono text-xs text-slate-800">
-                            $\frac{\binom{7}{1} \times \binom{6}{2} \times \binom{4}{2} \times \binom{2}{2}}{3!} = 105 \text{ possibilities}$
-                        </div>
-                    </div>
-
-                    <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200/80 space-y-4">
-                        <h4 class="font-bold text-sm text-slate-800 flex items-center gap-2">
-                            <span class="w-6 h-6 rounded-full bg-brand-navy text-white text-xs flex items-center justify-center">4</span>
-                            Total Combination Schemes Calculation
-                        </h4>
-                        <div class="bg-white p-4 rounded-xl border border-slate-200 font-mono text-xs text-slate-800 space-y-2">
-                            <div>4★ & 3★ Card Scheme Factor: $(10 \times 105) \times (3 \times 2) = 6300 \text{ schemes}$</div>
-                            <div>Double Color Options: $\binom{5}{2} = 10 \text{ possibilities}$</div>
-                            <div class="pt-2 font-bold text-indigo-600 border-t border-slate-100">
-                                Exact Math Verification: $6300 \times 10 \times 42 = 2,646,000 \text{ total combinations}$
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- SOURCE SHEET TAB -->
-        <div id="view-sheet" class="hidden space-y-6">
-            <div class="bg-white p-8 rounded-3xl border border-slate-100 card-elevated">
-                <div class="flex items-center justify-between mb-6">
-                    <div>
-                        <h2 class="text-2xl font-bold text-slate-900">Embedded Google Sheet</h2>
-                        <p class="text-xs text-slate-500">Live view of data source spreadsheet</p>
-                    </div>
-                    <a href="https://docs.google.com/spreadsheets/d/1oWcKyRqZMFc85CNlKIHiGQ_LLnzmqsRtpEl6Z88lVK0/edit?usp=sharing" target="_blank" class="px-4 py-2 bg-brand-navy text-white text-xs font-bold rounded-xl hover:bg-slate-800 transition flex items-center gap-2">
-                        Open in Google Sheets <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
-                    </a>
-                </div>
-                <div class="w-full h-[700px] rounded-2xl overflow-hidden border border-slate-200">
-                    <iframe src="https://docs.google.com/spreadsheets/d/1oWcKyRqZMFc85CNlKIHiGQ_LLnzmqsRtpEl6Z88lVK0/preview" class="w-full h-full border-0"></iframe>
-                </div>
-            </div>
-        </div>
-
-    </main>
-
-    <!-- JAVASCRIPT LOGIC -->
-    <script>
-        // Fallback dataset restricted strictly to 4★ (SR) and 3★ (R) cards
-        const SAMPLE_CARDS = [
-            {
-                id: "1004",
-                title: "Feather of the Blue Bird",
-                character: "Riquet",
-                rarity: "4★",
-                attribute: "Intelligent",
-                initialTraits: ["Innocent", "Pure", "Curious"],
-                lvledTraits: ["Divine Blessing", "Holy Word"]
-            },
-            {
-                id: "1009",
-                title: "Alchemist's Secret Glass",
-                character: "Murr",
-                rarity: "4★",
-                attribute: "Intelligent",
-                initialTraits: ["Eccentric", "Brilliant", "Unpredictable"],
-                lvledTraits: ["Shattered Moon", "Curiosity"]
-            },
-            {
-                id: "1010",
-                title: "Blooming Spring Garden",
-                character: "Chloe",
-                rarity: "4★",
-                attribute: "Happy",
-                initialTraits: ["Creative", "Gentle", "Stylish"],
-                lvledTraits: ["Tailor's Magic", "Warm Heart"]
-            },
-            {
-                id: "1011",
-                title: "Northern Wind Apprentice",
-                character: "Mithra",
-                rarity: "3★",
-                attribute: "Passion",
-                initialTraits: ["Wild", "Impatience"],
-                lvledTraits: ["Ember Spark"]
-            },
-            {
-                id: "1012",
-                title: "Quiet Library Reading",
-                character: "Arthur",
-                rarity: "3★",
-                attribute: "Cool",
-                initialTraits: ["Earnest", "Polite"],
-                lvledTraits: ["Scholar's Ink"]
-            },
-            {
-                id: "1013",
-                title: "Bar Tavern Melody",
-                character: "Shylock",
-                rarity: "4★",
-                attribute: "Brave",
-                initialTraits: ["Alluring", "Charming", "Witty"],
-                lvledTraits: ["Spiced Wine", "Midnight Rose"]
-            },
-            {
-                id: "1014",
-                title: "Southern Herbalist",
-                character: "Rutile",
-                rarity: "3★",
-                attribute: "Happy",
-                initialTraits: ["Gentle", "Kind"],
-                lvledTraits: ["Healing Herbs"]
-            },
-            {
-                id: "1015",
-                title: "Forest Patrol Knight",
-                character: "Cain",
-                rarity: "4★",
-                attribute: "Passion",
-                initialTraits: ["Valiant", "Direct", "Warm"],
-                lvledTraits: ["Knight Spirit", "Shield Barrier"]
-            }
-        ];
-
-        // Dedicated Traits Sheet Database categorized by Attribute & Rarity Tier
-        const SAMPLE_TRAITS_SHEET = [
-            { name: "Innocent", attribute: "Intelligent", rarity: "4★", bonus: 12, description: "Boosts MP growth in Intelligent spells" },
-            { name: "Pure", attribute: "Intelligent", rarity: "4★", bonus: 15, description: "Enhances skill accuracy" },
-            { name: "Curious", attribute: "Intelligent", rarity: "3★", bonus: 8, description: "Increases trait discovery rate" },
-            { name: "Divine Blessing", attribute: "Intelligent", rarity: "4★", bonus: 20, description: "High-tier attribute multiplier" },
-            { name: "Holy Word", attribute: "Intelligent", rarity: "3★", bonus: 10, description: "Bonus score during trials" },
-            
-            { name: "Eccentric", attribute: "Intelligent", rarity: "4★", bonus: 14, description: "Triggers random status buffs" },
-            { name: "Brilliant", attribute: "Intelligent", rarity: "4★", bonus: 18, description: "Boosts Wisdom attribute" },
-            { name: "Shattered Moon", attribute: "Intelligent", rarity: "4★", bonus: 22, description: "Increases total party synergy" },
-
-            { name: "Creative", attribute: "Happy", rarity: "4★", bonus: 14, description: "Grants Happy attribute bonus" },
-            { name: "Gentle", attribute: "Happy", rarity: "3★", bonus: 9, description: "Restores stamina" },
-            { name: "Stylish", attribute: "Happy", rarity: "4★", bonus: 16, description: "Enhances score during festival" },
-            { name: "Tailor's Magic", attribute: "Happy", rarity: "4★", bonus: 20, description: "Happy skill multiplier" },
-
-            { name: "Wild", attribute: "Passion", rarity: "3★", bonus: 10, description: "Increases Passion attack power" },
-            { name: "Impatience", attribute: "Passion", rarity: "3★", bonus: 7, description: "Boosts speed stat" },
-            { name: "Ember Spark", attribute: "Passion", rarity: "3★", bonus: 11, description: "Passion trial bonus" },
-
-            { name: "Valiant", attribute: "Passion", rarity: "4★", bonus: 15, description: "Reduces damage taken" },
-            { name: "Knight Spirit", attribute: "Passion", rarity: "4★", bonus: 19, description: "High Passion multiplier" },
-
-            { name: "Earnest", attribute: "Cool", rarity: "3★", bonus: 8, description: "Cool attribute defense" },
-            { name: "Polite", attribute: "Cool", rarity: "3★", bonus: 7, description: "Increases Cool trait synergy" },
-            { name: "Scholar's Ink", attribute: "Cool", rarity: "3★", bonus: 12, description: "Cool magic boost" },
-
-            { name: "Alluring", attribute: "Brave", rarity: "4★", bonus: 16, description: "Brave score multiplier" },
-            { name: "Spiced Wine", attribute: "Brave", rarity: "4★", bonus: 21, description: "High Brave attribute bonus" }
-        ];
-
-        let cardDatabase = [...SAMPLE_CARDS];
-        let traitsDatabase = [...SAMPLE_TRAITS_SHEET];
-        let partyCards = [null, null, null, null, null]; // 5 Slots
-
-        window.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
-            fetchSheetData();
-            fetchTraitsSheetData();
-            renderDashboard();
-            renderPartyBuilder();
-            renderDatabaseTable();
-            renderTraitsMatrix();
-        });
-
-        // Tab Switcher
-        function switchTab(tabId) {
-            const tabs = ['dashboard', 'party', 'database', 'traits', 'calculator', 'sheet'];
-            tabs.forEach(t => {
-                const el = document.getElementById(`view-${t}`);
-                const nav = document.getElementById(`nav-${t}`);
-                if (el) el.classList.add('hidden');
-                if (nav) {
-                    nav.classList.remove('bg-brand-navy', 'text-white', 'shadow-sm');
-                    nav.classList.add('text-slate-500', 'hover:bg-slate-100', 'hover:text-slate-900');
-                }
-            });
-
-            const activeView = document.getElementById(`view-${tabId}`);
-            const activeNav = document.getElementById(`nav-${tabId}`);
-            if (activeView) activeView.classList.remove('hidden');
-            if (activeNav) {
-                activeNav.classList.add('bg-brand-navy', 'text-white', 'shadow-sm');
-                activeNav.classList.remove('text-slate-500', 'hover:bg-slate-100', 'hover:text-slate-900');
-            }
-        }
-
-        async function fetchSheetData() {
-            const refreshIcon = document.getElementById('refresh-icon');
-            if (refreshIcon) refreshIcon.classList.add('animate-spin');
-
-            const sheetId = '1oWcKyRqZMFc85CNlKIHiGQ_LLnzmqsRtpEl6Z88lVK0';
-            const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`;
-
-            try {
-                const response = await fetch(csvUrl);
-                if (!response.ok) throw new Error("Network response was not ok");
-                const csvText = await response.text();
-                const parsed = parseCSV(csvText);
-                
-                if (parsed && parsed.length > 0) {
-                    // Filter exclusively for 4-star and 3-star cards (SR and R)
-                    const filteredCards = parsed.filter(c => {
-                        const r = c.rarity.toUpperCase();
-                        return r.includes('4') || r.includes('3') || r === 'SR' || r === 'R';
-                    });
-
-                    if (filteredCards.length > 0) {
-                        cardDatabase = filteredCards;
-                    }
-                }
-            } catch (error) {
-                console.warn("Using filtered fallback 4★ & 3★ cards list.", error);
-            } finally {
-                if (refreshIcon) refreshIcon.classList.remove('animate-spin');
-                renderDashboard();
-                renderPartyBuilder();
-                renderDatabaseTable();
-            }
-        }
-
-        async function fetchTraitsSheetData() {
-            const sheetId = '1oWcKyRqZMFc85CNlKIHiGQ_LLnzmqsRtpEl6Z88lVK0';
-            const traitsUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=Traits`;
-
-            try {
-                const response = await fetch(traitsUrl);
-                if (!response.ok) return;
-                const csvText = await response.text();
-                const parsedTraits = parseTraitsCSV(csvText);
-                if (parsedTraits && parsedTraits.length > 0) {
-                    traitsDatabase = parsedTraits;
-                    renderTraitsMatrix();
-                }
-            } catch (err) {
-                console.warn("Using sample traits sheet data", err);
-            }
-        }
-
-        function parseCSV(text) {
-            const lines = text.split('\n');
-            if (lines.length < 2) return null;
-
-            const data = [];
-            for (let i = 1; i < lines.length; i++) {
-                const line = lines[i].trim();
-                // Ignore completely empty lines or whitespace-only lines
-                if (!line) continue;
-
-                const row = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || line.split(',');
-                if (!row) continue;
-
-                const cleanRow = row.map(cell => cell.replace(/^"|"$/g, '').trim());
-                
-                const id = cleanRow[0] || `ID-${i}`;
-                const title = cleanRow[1] || "";
-                const character = cleanRow[2] || "";
-                let rarity = cleanRow[3] || "4★";
-                const attribute = cleanRow[4] || "Cool";
-                
-                // Ignore if essential fields are empty
-                if (!title && !character) continue;
-
-                // Normalize rarity representation
-                if (rarity === "SR") rarity = "4★";
-                if (rarity === "R") rarity = "3★";
-
-                const initialTraitsStr = cleanRow[5] || "";
-                const lvledTraitsStr = cleanRow[6] || "";
-
-                // Parse traits ignoring empty spaces/strings
-                const initialTraits = initialTraitsStr.split(',')
-                    .map(t => t.trim())
-                    .filter(t => t.length > 0);
-
-                const lvledTraits = lvledTraitsStr.split(',')
-                    .map(t => t.trim())
-                    .filter(t => t.length > 0);
-
-                data.push({ id, title, character, rarity, attribute, initialTraits, lvledTraits });
-            }
-            return data;
-        }
-
-        function parseTraitsCSV(text) {
-            const lines = text.split('\n');
-            if (lines.length < 2) return null;
-            const traits = [];
-
-            for (let i = 1; i < lines.length; i++) {
-                const line = lines[i].trim();
-                if (!line) continue; // Ignore empty lines
-
-                const row = line.split(',').map(c => c.replace(/^"|"$/g, '').trim());
-                if (row.length < 3) continue;
-
-                const name = row[0];
-                const attribute = row[1] || "Cool";
-                let rarity = row[2] || "4★";
-                const bonus = parseInt(row[3]) || 10;
-                const description = row[4] || "Attribute trait modifier";
-
-                // Ignore if trait name is blank space
-                if (!name || name.trim().length === 0) continue;
-
-                if (rarity === "SR") rarity = "4★";
-                if (rarity === "R") rarity = "3★";
-
-                traits.push({ name, attribute, rarity, bonus, description });
-            }
-            return traits;
-        }
-
-        function refreshData() {
-            fetchSheetData();
-            fetchTraitsSheetData();
-        }
-
-        function addToParty(cardId) {
-            const card = cardDatabase.find(c => c.id === cardId);
-            if (!card) return;
-
-            if (partyCards.some(c => c && c.id === cardId)) {
-                return;
-            }
-
-            const emptyIndex = partyCards.findIndex(c => c === null);
-            if (emptyIndex === -1) {
-                return;
-            }
-
-            partyCards[emptyIndex] = card;
-            updatePartyUI();
-        }
-
-        function removeFromParty(index) {
-            partyCards[index] = null;
-            updatePartyUI();
-        }
-
-        function clearParty() {
-            partyCards = [null, null, null, null, null];
-            updatePartyUI();
-        }
-
-        function updatePartyUI() {
-            renderDashboard();
-            renderPartyBuilder();
-            renderDatabaseTable();
-        }
-
-        function renderDashboard() {
-            const activeCount = partyCards.filter(Boolean).length;
-            
-            const partyCountBadge = document.getElementById('party-count-badge');
-            if (partyCountBadge) partyCountBadge.innerText = `${activeCount}/5`;
-
-            const heroCount = document.getElementById('hero-party-count');
-            if (heroCount) heroCount.innerText = activeCount;
-
-            const statPartyCount = document.getElementById('stat-party-count');
-            if (statPartyCount) statPartyCount.innerText = activeCount;
-
-            for (let i = 0; i < 3; i++) {
-                const heroSlot = document.getElementById(`hero-slot-${i}`);
-                if (!heroSlot) continue;
-
-                const card = partyCards[i];
-                if (card) {
-                    heroSlot.innerHTML = `
-                        <div class="flex justify-between items-start">
-                            <span class="text-xs font-extrabold opacity-70 uppercase">Slot 0${i+1}</span>
-                            <span class="text-xs bg-white/70 px-2 py-0.5 rounded-full font-bold text-slate-800">${card.rarity}</span>
-                        </div>
-                        <div class="my-4">
-                            <span class="text-[10px] font-extrabold uppercase tracking-wider opacity-60">${card.character}</span>
-                            <h4 class="font-bold text-sm leading-snug line-clamp-1">${card.title}</h4>
-                            <p class="text-[11px] opacity-80 mt-1">${card.attribute}</p>
-                        </div>
-                        <button onclick="removeFromParty(${i})" class="w-full bg-slate-900/10 hover:bg-slate-900/20 text-slate-900 text-[11px] font-bold py-1.5 rounded-xl transition">
-                            Remove
-                        </button>
-                    `;
-                } else {
-                    heroSlot.innerHTML = `
-                        <div class="flex justify-between items-start">
-                            <span class="text-xs font-extrabold opacity-60 uppercase">Slot 0${i+1}</span>
-                            <span class="text-xs bg-white/40 px-2 py-0.5 rounded-full font-bold text-slate-800">Empty</span>
-                        </div>
-                        <div class="my-6">
-                            <i data-lucide="plus-circle" class="w-7 h-7 opacity-40 mb-1"></i>
-                            <h4 class="font-bold text-sm leading-snug">Select Card</h4>
-                            <p class="text-[11px] opacity-60">Party slot empty</p>
-                        </div>
-                        <div class="w-full bg-slate-950/10 h-1.5 rounded-full overflow-hidden">
-                            <div class="bg-slate-900 h-full w-0"></div>
-                        </div>
-                    `;
-                }
-            }
-
-            // Consolidate traits while ignoring empty spaces
-            const activePartyCards = partyCards.filter(Boolean);
-            const allTraits = new Set();
-            const attributeCounts = { Passion: 0, Cool: 0, Intelligent: 0, Brave: 0, Happy: 0 };
-            let totalSynergyMultiplier = 0;
-
-            activePartyCards.forEach(c => {
-                (c.initialTraits || []).forEach(t => {
-                    if (t && t.trim().length > 0) allTraits.add(t.trim());
-                });
-                (c.lvledTraits || []).forEach(t => {
-                    if (t && t.trim().length > 0) allTraits.add(t.trim());
-                });
-                if (attributeCounts[c.attribute] !== undefined) {
-                    attributeCounts[c.attribute]++;
-                }
-            });
-
-            // Math Synergy calculation matching Traits sheet attribute & rarity
-            allTraits.forEach(traitName => {
-                const traitObj = traitsDatabase.find(td => td.name.toLowerCase() === traitName.toLowerCase());
-                if (traitObj) {
-                    const cardMatch = activePartyCards.some(c => c.attribute === traitObj.attribute);
-                    const rarityMult = traitObj.rarity === '4★' ? 1.25 : 1.10;
-                    totalSynergyMultiplier += traitObj.bonus * (cardMatch ? rarityMult : 1.0);
-                } else {
-                    totalSynergyMultiplier += 10;
-                }
-            });
-
-            const statUnique = document.getElementById('stat-unique-traits');
-            if (statUnique) statUnique.innerText = allTraits.size;
-
-            const matchedSynergy = document.getElementById('matched-synergy-rate');
-            if (matchedSynergy) matchedSynergy.innerText = `+${Math.round(totalSynergyMultiplier)}% Synergy`;
-
-            const traitsContainer = document.getElementById('party-traits-container');
-            const traitTagCount = document.getElementById('trait-tag-count');
-            
-            if (traitsContainer) {
-                if (allTraits.size === 0) {
-                    traitsContainer.innerHTML = `
-                        <div class="text-center py-8 w-full text-slate-400 text-xs">
-                            <i data-lucide="layers" class="w-8 h-8 mx-auto mb-2 opacity-30"></i>
-                            No cards in party.<br>Add cards to inspect active trait synergies.
-                        </div>
-                    `;
-                    if (traitTagCount) traitTagCount.innerText = '0 Traits';
-                } else {
-                    if (traitTagCount) traitTagCount.innerText = `${allTraits.size} Traits`;
-                    traitsContainer.innerHTML = Array.from(allTraits).map(trait => {
-                        const traitMeta = traitsDatabase.find(td => td.name.toLowerCase() === trait.toLowerCase());
-                        const attrBadge = traitMeta ? traitMeta.attribute : '';
-                        const rarityBadge = traitMeta ? traitMeta.rarity : '';
-                        return `
-                            <span class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-200/80 rounded-xl text-xs font-semibold text-slate-700 transition flex items-center gap-1.5">
-                                <i data-lucide="sparkle" class="w-3 h-3 text-amber-500"></i>
-                                ${trait}
-                                ${attrBadge ? `<span class="text-[9px] bg-indigo-100 text-indigo-700 px-1 py-0.2 rounded font-bold">${attrBadge}</span>` : ''}
-                                ${rarityBadge ? `<span class="text-[9px] bg-amber-100 text-amber-800 px-1 py-0.2 rounded font-bold">${rarityBadge}</span>` : ''}
-                            </span>
-                        `;
-                    }).join('');
-                }
-            }
-
-            const attrPills = document.getElementById('attribute-pills');
-            if (attrPills) {
-                attrPills.innerHTML = `
-                    <span class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-rose-100 text-rose-700">Pass: ${attributeCounts.Passion}</span>
-                    <span class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-blue-100 text-blue-700">Cool: ${attributeCounts.Cool}</span>
-                    <span class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-amber-100 text-amber-700">Int: ${attributeCounts.Intelligent}</span>
-                `;
-            }
-
-            renderDashboardCardsTable();
-            lucide.createIcons();
-        }
-
-        function renderDashboardCardsTable() {
-            const tbody = document.getElementById('cards-table-body');
-            if (!tbody) return;
-
-            const rarityFilter = document.getElementById('filter-rarity')?.value || '';
-            const attrFilter = document.getElementById('filter-attribute')?.value || '';
-            const globalSearch = document.getElementById('global-search')?.value.toLowerCase().trim() || '';
-
-            // Strictly count 4★ (SR) and 3★ (R) cards
-            const filtered = cardDatabase.filter(card => {
-                const matchesRarity = !rarityFilter || card.rarity === rarityFilter;
-                const matchesAttr = !attrFilter || card.attribute === attrFilter;
-                const matchesSearch = !globalSearch || 
-                    card.title.toLowerCase().includes(globalSearch) ||
-                    card.character.toLowerCase().includes(globalSearch) ||
-                    card.initialTraits.some(t => t.toLowerCase().includes(globalSearch)) ||
-                    card.lvledTraits.some(t => t.toLowerCase().includes(globalSearch));
-
-                return matchesRarity && matchesAttr && matchesSearch;
-            });
-
-            if (filtered.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="5" class="py-8 text-center text-slate-400 text-xs">
-                            No 4★ or 3★ cards matching search criteria.
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-
-            tbody.innerHTML = filtered.slice(0, 8).map(card => {
-                const inParty = partyCards.some(c => c && c.id === card.id);
-                return `
-                    <tr class="hover:bg-slate-50/80 transition">
-                        <td class="py-3 pl-2">
-                            <div class="font-bold text-slate-800">${card.title}</div>
-                            <div class="text-[10px] text-slate-400">ID: ${card.id}</div>
-                        </td>
-                        <td class="py-3 font-semibold text-slate-700">${card.character}</td>
-                        <td class="py-3">
-                            <div class="flex flex-wrap gap-1 max-w-xs">
-                                ${(card.initialTraits || []).map(t => t.trim()).filter(Boolean).map(t => `<span class="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded text-[10px]">${t}</span>`).join('')}
-                            </div>
-                        </td>
-                        <td class="py-3">
-                            <div class="flex flex-wrap gap-1 max-w-xs">
-                                ${(card.lvledTraits || []).map(t => t.trim()).filter(Boolean).map(t => `<span class="bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded text-[10px]">${t}</span>`).join('')}
-                            </div>
-                        </td>
-                        <td class="py-3 text-right pr-2">
-                            ${inParty ? `
-                                <span class="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-xl text-[11px] font-bold">In Party</span>
-                            ` : `
-                                <button onclick="addToParty('${card.id}')" class="px-3 py-1 bg-brand-navy hover:bg-slate-800 text-white rounded-xl text-[11px] font-bold transition">
-                                    + Add
-                                </button>
-                            `}
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-        }
-
-        function renderPartyBuilder() {
-            const grid = document.getElementById('party-builder-grid');
-            if (!grid) return;
-
-            grid.innerHTML = partyCards.map((card, idx) => {
-                if (card) {
-                    return `
-                        <div class="bg-slate-50 border border-slate-200 p-5 rounded-3xl flex flex-col justify-between relative group hover:shadow-md transition">
-                            <div>
-                                <div class="flex justify-between items-center mb-3">
-                                    <span class="text-[10px] font-extrabold uppercase text-slate-400">Slot 0${idx+1}</span>
-                                    <span class="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold rounded-full">${card.rarity}</span>
-                                </div>
-                                <h4 class="font-bold text-sm text-slate-900 mb-1 leading-snug">${card.title}</h4>
-                                <p class="text-xs font-semibold text-slate-500 mb-3">${card.character} · <span class="text-slate-700">${card.attribute}</span></p>
-
-                                <div class="space-y-2 text-[11px]">
-                                    <div>
-                                        <span class="text-slate-400 font-medium block mb-1">Initial Traits:</span>
-                                        <div class="flex flex-wrap gap-1">
-                                            ${card.initialTraits.filter(Boolean).map(t => `<span class="bg-white border border-slate-200 text-slate-700 px-1.5 py-0.5 rounded-lg">${t}</span>`).join('')}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <span class="text-slate-400 font-medium block mb-1">Lvled Traits:</span>
-                                        <div class="flex flex-wrap gap-1">
-                                            ${card.lvledTraits.filter(Boolean).map(t => `<span class="bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded-lg">${t}</span>`).join('')}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <button onclick="removeFromParty(${idx})" class="mt-4 w-full py-2 bg-rose-50 text-rose-600 hover:bg-rose-100 text-xs font-bold rounded-xl transition">
-                                Remove Card
-                            </button>
-                        </div>
-                    `;
-                } else {
-                    return `
-                        <div class="border-2 border-dashed border-slate-200 p-6 rounded-3xl flex flex-col items-center justify-center text-center min-h-[260px] bg-white hover:border-slate-300 transition">
-                            <div class="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 mb-3">
-                                <i data-lucide="plus" class="w-6 h-6"></i>
-                            </div>
-                            <span class="text-xs font-bold text-slate-400 mb-1">Slot 0${idx+1} Empty</span>
-                            <p class="text-[11px] text-slate-400 mb-4">Add 4★ or 3★ card</p>
-                            <button onclick="switchTab('dashboard')" class="px-3 py-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 text-xs font-bold rounded-xl transition">
-                                Browse Cards
-                            </button>
-                        </div>
-                    `;
-                }
-            }).join('');
-
-            const detailList = document.getElementById('detailed-traits-list');
-            if (detailList) {
-                const filledCards = partyCards.filter(Boolean);
-                if (filledCards.length === 0) {
-                    detailList.innerHTML = `<p class="text-slate-400 text-xs col-span-3">No cards selected in party.</p>`;
-                } else {
-                    detailList.innerHTML = filledCards.map(c => `
-                        <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200/80">
-                            <div class="flex justify-between items-center mb-2">
-                                <h5 class="font-bold text-xs text-slate-800">${c.character} - ${c.title}</h5>
-                                <span class="text-[10px] font-bold px-2 py-0.5 bg-amber-100 rounded-md text-amber-800">${c.rarity} · ${c.attribute}</span>
-                            </div>
-                            <div class="text-[11px] space-y-1">
-                                <p><span class="text-slate-400">Initial:</span> ${c.initialTraits.filter(Boolean).join(', ')}</p>
-                                <p><span class="text-indigo-500">Leveled:</span> ${c.lvledTraits.filter(Boolean).join(', ')}</p>
-                            </div>
-                        </div>
-                    `).join('');
-                }
-            }
-
-            lucide.createIcons();
-        }
-
-        function renderDatabaseTable() {
-            const tbody = document.getElementById('full-database-body');
-            if (!tbody) return;
-
-            const searchQuery = document.getElementById('db-search')?.value.toLowerCase().trim() || '';
-
-            const filtered = cardDatabase.filter(c => {
-                return !searchQuery || 
-                    c.title.toLowerCase().includes(searchQuery) ||
-                    c.character.toLowerCase().includes(searchQuery) ||
-                    c.id.toLowerCase().includes(searchQuery) ||
-                    c.initialTraits.some(t => t.toLowerCase().includes(searchQuery)) ||
-                    c.lvledTraits.some(t => t.toLowerCase().includes(searchQuery));
-            });
-
-            tbody.innerHTML = filtered.map(c => {
-                const inParty = partyCards.some(p => p && p.id === c.id);
-                return `
-                    <tr class="hover:bg-slate-50 transition">
-                        <td class="py-3 pl-3 font-mono text-slate-400 text-[11px]">${c.id}</td>
-                        <td class="py-3 font-bold text-slate-800">${c.title}</td>
-                        <td class="py-3 font-medium text-slate-700">${c.character}</td>
-                        <td class="py-3">
-                            <span class="px-2 py-0.5 bg-amber-100 border border-amber-200 text-amber-900 font-bold rounded text-[10px]">${c.rarity}</span>
-                            <span class="ml-1 text-[11px] text-slate-500">${c.attribute}</span>
-                        </td>
-                        <td class="py-3 max-w-xs">
-                            <div class="flex flex-wrap gap-1">
-                                ${c.initialTraits.filter(Boolean).map(t => `<span class="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded text-[10px]">${t}</span>`).join('')}
-                            </div>
-                        </td>
-                        <td class="py-3 max-w-xs">
-                            <div class="flex flex-wrap gap-1">
-                                ${c.lvledTraits.filter(Boolean).map(t => `<span class="bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded text-[10px]">${t}</span>`).join('')}
-                            </div>
-                        </td>
-                        <td class="py-3 text-right pr-3">
-                            ${inParty ? `
-                                <span class="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-xl text-[11px] font-bold">In Party</span>
-                            ` : `
-                                <button onclick="addToParty('${c.id}')" class="px-3 py-1 bg-brand-navy hover:bg-slate-800 text-white rounded-xl text-[11px] font-bold transition">
-                                    + Add Card
-                                </button>
-                            `}
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-        }
-
-        function renderTraitsMatrix() {
-            const container = document.getElementById('traits-matrix-container');
-            if (!container) return;
-
-            const attrFilter = document.getElementById('trait-attr-filter')?.value || '';
-            const rarityFilter = document.getElementById('trait-rarity-filter')?.value || '';
-
-            const filteredTraits = traitsDatabase.filter(t => {
-                const matchAttr = !attrFilter || t.attribute === attrFilter;
-                const matchRarity = !rarityFilter || t.rarity === rarityFilter;
-                return matchAttr && matchRarity;
-            });
-
-            if (filteredTraits.length === 0) {
-                container.innerHTML = `
-                    <div class="col-span-3 text-center py-12 text-slate-400 text-xs">
-                        No traits found matching selected attribute and rarity filter.
-                    </div>
-                `;
-                return;
-            }
-
-            container.innerHTML = filteredTraits.map(t => {
-                const attrColors = {
-                    Passion: "bg-rose-50 text-rose-700 border-rose-200",
-                    Cool: "bg-blue-50 text-blue-700 border-blue-200",
-                    Intelligent: "bg-amber-50 text-amber-700 border-amber-200",
-                    Brave: "bg-purple-50 text-purple-700 border-purple-200",
-                    Happy: "bg-emerald-50 text-emerald-700 border-emerald-200"
-                };
-                const badgeStyle = attrColors[t.attribute] || "bg-slate-50 text-slate-700 border-slate-200";
-
-                return `
-                    <div class="p-5 bg-white border border-slate-200/80 rounded-2xl shadow-sm hover:shadow-md transition">
-                        <div class="flex justify-between items-start mb-3">
-                            <div>
-                                <h4 class="font-bold text-sm text-slate-900">${t.name}</h4>
-                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">${t.rarity} Trait</span>
-                            </div>
-                            <span class="px-2.5 py-1 rounded-lg border text-xs font-bold ${badgeStyle}">${t.attribute}</span>
-                        </div>
-                        <p class="text-xs text-slate-500 mb-4">${t.description}</p>
-                        <div class="flex items-center justify-between pt-3 border-t border-slate-100 text-xs font-semibold">
-                            <span class="text-slate-400">Base Synergy:</span>
-                            <span class="text-indigo-600 font-bold">+${t.bonus}% Bonus</span>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function applyFilters() {
-            renderDashboardCardsTable();
-            renderDatabaseTable();
-        }
-
-        function handleSearch(val) {
-            applyFilters();
-        }
-    </script>
+        <div class="char"><span class="attr-dot" style="background:${a.color}"></span>${c.character}</div>
+        <div class="title-en">${c.en}</div>
+        <div class="title-jp">${c.jp}</div>
+      </button>`;
+  }).join('');
+}
+
+function toggleRarity(r){
+  if(activeRarities.has(r) && activeRarities.size===1) return; // keep at least one active
+  activeRarities.has(r) ? activeRarities.delete(r) : activeRarities.add(r);
+  document.getElementById('toggle-'+r).dataset.active = activeRarities.has(r);
+  renderGrid();
+}
+
+/* ============ INTERACTIONS ============ */
+function handleCardClick(id){
+  const card = CARDS.find(c=>c.id===id);
+  const idx = party.findIndex(p=>p.id===id);
+  if(idx>-1){
+    party.splice(idx,1);
+  } else {
+    if(party.length>=5) return;
+    party.push(card);
+  }
+  detailCard = card;
+  renderGrid(); renderParty(); renderDetail(); renderPoints();
+}
+
+function removeFromParty(id, ev){
+  ev.stopPropagation();
+  party = party.filter(p=>p.id!==id);
+  renderGrid(); renderParty(); renderPoints();
+}
+
+function resetParty(){
+  party = [];
+  detailCard = null;
+  renderGrid(); renderParty(); renderDetail(); renderPoints();
+}
+
+/* ============ RENDER: party slots ============ */
+function renderParty(){
+  const slots = document.getElementById('partySlots');
+  let html = '';
+  for(let i=0;i<5;i++){
+    const c = party[i];
+    if(c){
+      const a = ATTR[c.attr];
+      html += `<div class="slot filled" style="background:${a.color}" onclick='selectDetail(${c.id})'>
+        <div class="blob"><div class="eyes"><span></span><span></span></div></div>
+        <span class="remove" onclick="removeFromParty(${c.id}, event)">✕</span>
+      </div>`;
+    } else {
+      html += `<div class="slot"></div>`;
+    }
+  }
+  slots.innerHTML = html;
+}
+
+function selectDetail(id){
+  detailCard = CARDS.find(c=>c.id===id);
+  renderDetail();
+}
+
+/* ============ RENDER: detail panel ============ */
+function renderDetail(){
+  const body = document.getElementById('detailBody');
+  if(!detailCard){
+    body.innerHTML = `<div class="detail-empty">カードをクリックすると、ここにタイトル・属性・サンプル特性が表示されます。</div>`;
+    return;
+  }
+  const c = detailCard;
+  const a = ATTR[c.attr];
+  const traits = sampleTraits(c);
+  body.innerHTML = `
+    <div class="detail-card">
+      <div class="badges">
+        <span class="badge">${c.rarity}</span>
+        <span class="badge">${"✧".repeat(c.star)}</span>
+        <span class="badge">${a.jp}</span>
+      </div>
+      <div class="en">${c.en}</div>
+      <div class="jp">${c.jp}</div>
+      <div class="char">${c.character}</div>
+      <div class="trait-chips">
+        ${traits.map(t=>`<span class="trait-chip" style="background:${ATTR[t.attr].color}">${t.word} · Lv${t.level}</span>`).join('')}
+      </div>
+      <div class="trait-note">🔧 特性はサンプルです。実データがないため、Traitsタブの属性×レベル別プールからカードIDを元に自動選出しています。</div>
+    </div>`;
+}
+
+/* ============ RENDER: points ============ */
+function renderPoints(){
+  const rows = document.getElementById('pointsBreakdown');
+  const totalEl = document.getElementById('pointsTotal');
+
+  if(party.length===0){
+    totalEl.textContent = '0';
+    rows.innerHTML = `<div class="points-row"><span>カード未選択</span><span>—</span></div>`;
+    return;
+  }
+
+  const starPoints = party.reduce((s,c)=>s + c.star*250, 0);
+  const attrCounts = {};
+  party.forEach(c=>{ attrCounts[c.attr] = (attrCounts[c.attr]||0)+1; });
+  const synergyPairs = Object.values(attrCounts).reduce((s,n)=> s + (n>1 ? (n-1) : 0), 0);
+  const synergyPoints = synergyPairs*300;
+  const total = starPoints + synergyPoints;
+
+  totalEl.textContent = total.toLocaleString();
+  rows.innerHTML = `
+    <div class="points-row"><span>★合計（枚数×★×250）</span><span>${starPoints.toLocaleString()}</span></div>
+    <div class="points-row"><span>属性シナジー（+300×${synergyPairs}）</span><span>${synergyPoints.toLocaleString()}</span></div>
+    <div class="points-row"><span>選択枚数</span><span>${party.length} / 5</span></div>
+  `;
+}
+
+init();
+</script>
 </body>
 </html>
