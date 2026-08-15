@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>パーティピッカー — Party Picker</title>
+<title>Party Picker — SSR/SR Chibi Builder</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -157,7 +157,7 @@
 
   /* ---------- Picker layout ---------- */
   .picker-shell{
-    display:grid; grid-template-columns:1fr 340px; gap:24px; padding-bottom:80px;
+    display:grid; grid-template-columns:380px 1fr; gap:24px; padding-bottom:80px;
   }
   @media (max-width:980px){ .picker-shell{grid-template-columns:1fr;} }
 
@@ -230,38 +230,39 @@
   .panel h3{font-size:14px; text-transform:uppercase; letter-spacing:.06em; font-weight:800;}
   .panel .sub{font-size:11.5px; opacity:.5; margin-top:4px; font-weight:600;}
 
-  .party-slots{display:flex; gap:8px; margin-top:16px;}
-  .slot{
-    flex:1; aspect-ratio:1/1; border-radius:12px; border:1.5px dashed var(--line-strong);
-    display:flex; align-items:center; justify-content:center; position:relative; background:var(--cream);
+  .party-panel{border:2px solid var(--ink);}
+  .party-list{display:flex; flex-direction:column; gap:10px; margin-top:16px;}
+  .party-row{
+    border-radius:16px; border:1.5px dashed var(--line-strong); background:var(--cream);
+    padding:12px; transition:all .12s;
   }
-  .slot.filled{border-style:solid; border-color:var(--ink); cursor:pointer;}
-  .slot .blob{width:60%;height:60%;}
-  .slot .remove{
-    position:absolute; top:-6px; right:-6px; width:18px; height:18px; border-radius:50%;
-    background:var(--ink); color:var(--cream); font-size:10px; display:flex; align-items:center; justify-content:center;
-    border:2px solid var(--paper); cursor:pointer;
+  .party-row.filled{border-style:solid; border-color:var(--ink); background:var(--paper);}
+  .party-row.empty{
+    display:flex; align-items:center; justify-content:center; min-height:52px;
+    font-size:12px; font-weight:700; opacity:.4;
+  }
+  .party-row-head{display:flex; align-items:center; gap:10px;}
+  .party-row-icon{width:42px; height:42px; flex:none;}
+  .party-row-icon .blob{width:100%; height:100%; background:rgba(255,255,255,0.7);}
+  .party-row-icon .eyes span{width:15%;}
+  .party-row-info{flex:1; min-width:0;}
+  .party-row-info .title{font-size:13px; font-weight:800; line-height:1.3;}
+  .party-row-info .meta{font-size:11px; opacity:.55; font-weight:700; margin-top:2px;}
+  .party-row-remove{
+    flex:none; width:22px; height:22px; border-radius:50%; border:none; cursor:pointer;
+    background:var(--ink); color:var(--cream); font-size:11px;
+  }
+  .party-row-traits{display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;}
+  .trait-chip{
+    font-size:11.5px; font-weight:700; padding:5px 11px; border-radius:999px;
+  }
+  .party-note{
+    font-size:10.5px; opacity:.5; margin-top:16px; padding-top:12px; border-top:1px solid var(--line);
+    line-height:1.6;
   }
   .reset-link{
     display:block; text-align:center; margin-top:14px; font-size:12px; font-weight:700;
     opacity:.55; background:none; border:none; cursor:pointer; width:100%; text-decoration:underline;
-  }
-
-  .detail-empty{font-size:13px; opacity:.55; margin-top:14px; line-height:1.7;}
-  .detail-card{margin-top:14px;}
-  .detail-card .badges{display:flex; gap:6px; margin-bottom:10px;}
-  .badge{font-size:10.5px; font-weight:800; padding:4px 9px; border-radius:999px; background:var(--cream); border:1px solid var(--line-strong);}
-  .detail-card .en{font-size:15px; font-weight:800; line-height:1.35;}
-  .detail-card .jp{font-size:12.5px; opacity:.55; margin-top:3px;}
-  .detail-card .char{font-size:12px; margin-top:8px; font-weight:700; opacity:.7;}
-  .trait-note{
-    font-size:10.5px; opacity:.5; margin-top:16px; padding-top:12px; border-top:1px solid var(--line);
-    line-height:1.6;
-  }
-  .trait-chips{display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;}
-  .trait-chip{
-    font-size:12px; font-weight:700; padding:6px 12px; border-radius:999px;
-    display:flex; align-items:center; gap:6px;
   }
 
   .points-total{font-size:38px; font-weight:900; font-family:'Zen Maru Gothic',sans-serif; margin-top:6px;}
@@ -282,15 +283,15 @@
   <div class="wrap nav">
     <div class="logo">
       <div class="blob"><div class="eyes"><span></span><span></span></div></div>
-      <div>パーティピッカー<small>PARTY PICKER · STATIC DEMO</small></div>
+      <div>Party Picker<small>SSR / SR CARD BUILDER</small></div>
     </div>
     <nav class="navlinks">
-      <a href="#legend">属性</a>
-      <a href="#picker">カードを選ぶ</a>
-      <a href="#about">このサイトについて</a>
+      <a href="#legend">Attributes</a>
+      <a href="#picker">Pick Cards</a>
+      <a href="#about">About</a>
     </nav>
     <button class="navcta" onclick="document.getElementById('picker').scrollIntoView()">
-      <span class="dot">→</span> ピッカーを開く
+      <span class="dot">→</span> Open Picker
     </button>
   </div>
 </header>
@@ -299,17 +300,16 @@
 
   <section class="hero">
     <div>
-      <div class="eyebrow"><div class="blob"></div> SSR / SR 限定ピッカー</div>
-      <h1>5枚選んで、<br>パーティを組み立てよう。</h1>
+      <div class="eyebrow"><div class="blob"></div> Party Picker</div>
+      <h1>Pick 5 cards.<br>Build your chibi</h1>
       <p class="lead">
-        SSR・SRカードだけを対象にした簡易パーティピッカーです。カードを選ぶと特性（サンプル）が表示され、
-        右側のパネルで合計ポイントをリアルタイムに計算します。
+        Because of how traits work, this only has the SSRs and SRs included. They're color coded so hopefully this makes sense. Greatly inspired by: https://a1sareru.github.io/shoot300k/
       </p>
       <div class="actions">
         <button class="btn-primary" onclick="document.getElementById('picker').scrollIntoView()">
-          <span class="dot">✧</span> カードを選ぶ
+          <span class="dot">✧</span> Start Building
         </button>
-        <button class="btn-secondary" onclick="document.getElementById('about').scrollIntoView()">仕組みを見る</button>
+        <button class="btn-secondary" onclick="document.getElementById('about').scrollIntoView()">How it works</button>
       </div>
     </div>
     <div class="hero-art">
@@ -325,17 +325,38 @@
   <section id="picker">
     <div class="section-head">
       <div class="kicker">Party Picker</div>
-      <h2>カードを選択</h2>
-      <p>キャラクター・属性・レアリティで絞り込めます。カードをクリックするとパーティに追加され、特性と合計ポイントが更新されます。</p>
+      <h2>Build Your Party</h2>
+      <p>Filter by character, attribute, or rarity. Click a card to add it — its traits show up right on the party card, and your total updates live.</p>
     </div>
 
     <div class="picker-shell">
+      <div class="side-stack">
+        <div class="panel party-panel">
+          <h3>Your Party</h3>
+          <div class="sub">Pick up to 5 SSR or SR cards</div>
+          <div id="partySlots" class="party-list"></div>
+          <div class="party-note">
+            🔧 Traits shown are sample placeholders, auto-picked from the real attribute × level word pool in the Traits tab — swap in the actual per-card assignments once they're filled in.
+          </div>
+          <button class="reset-link" onclick="resetParty()">Reset Party</button>
+        </div>
+
+        <div class="panel">
+          <h3>Total Points</h3>
+          <div class="points-total" id="pointsTotal">0</div>
+          <div class="points-breakdown" id="pointsBreakdown"></div>
+          <div class="points-formula">
+            🔧 Sample scoring formula (★ × 250 per card, +300 per attribute-synergy pair). Swap in your real formula once it's defined.
+          </div>
+        </div>
+      </div>
+
       <div>
         <div class="filters">
-          <input id="search" type="search" placeholder="タイトル・キャラクターで検索…" oninput="renderGrid()">
+          <input id="search" type="search" placeholder="Search title or character…" oninput="renderGrid()">
           <select id="charFilter" class="filter-select" onchange="renderGrid()"></select>
           <select id="attrFilter" class="filter-select" onchange="renderGrid()">
-            <option value="">全属性</option>
+            <option value="">All attributes</option>
           </select>
           <div class="rarity-toggles">
             <button class="chip-toggle" id="toggle-SSR" data-active="true" onclick="toggleRarity('SSR')">SSR</button>
@@ -346,42 +367,19 @@
 
         <div id="grid" class="card-grid"></div>
       </div>
-
-      <div class="side-stack">
-        <div class="panel">
-          <h3>パーティ</h3>
-          <div class="sub">最大5枚まで選択できます</div>
-          <div id="partySlots" class="party-slots"></div>
-          <button class="reset-link" onclick="resetParty()">パーティをリセット</button>
-        </div>
-
-        <div class="panel" id="detailPanel">
-          <h3>特性</h3>
-          <div class="sub">カードを選ぶと表示されます</div>
-          <div id="detailBody"></div>
-        </div>
-
-        <div class="panel">
-          <h3>合計ポイント</h3>
-          <div class="points-total" id="pointsTotal">0</div>
-          <div class="points-breakdown" id="pointsBreakdown"></div>
-          <div class="points-formula">
-            🔧 これはサンプルの計算式です（★×250 + 同属性ボーナス300）。実際のスコアリング方式が決まり次第、差し替えてください。
-          </div>
-        </div>
-      </div>
     </div>
   </section>
 
   <section id="about">
     <div class="section-head">
       <div class="kicker">About this data</div>
-      <h2>このサイトについて</h2>
+      <h2>About this site</h2>
       <p>
-        カードのタイトル・キャラクター・レアリティ・属性は、共有いただいたスプレッドシートの実データを使用しています。
-        一方で「特性（Initial Traits / LvledTraits）」の列は現時点で未入力だったため、
-        Traits タブにある属性×レベル別の候補プールから、カードごとに機械的にサンプルを割り当てています。
-        実際の特性データが揃い次第、このサンプルロジックを本物のマッピングに置き換えられます。
+        Card titles, characters, rarity, and attributes are pulled from your real spreadsheet
+        (the v1 and v2 tabs). The "Initial Traits" / "LvledTraits" columns are still empty
+        there, so this demo auto-assigns sample traits per card from the real attribute ×
+        level word pool in the Traits tab. Once real per-card trait assignments and a scoring
+        formula are available, both can be swapped in directly.
       </p>
     </div>
   </section>
@@ -392,9 +390,9 @@
   <div class="wrap foot-row">
     <div class="logo">
       <div class="blob"><div class="eyes"><span></span><span></span></div></div>
-      <div>パーティピッカー</div>
+      <div>Party Picker</div>
     </div>
-    <p class="foot-note">静的デモサイト。特性データはサンプルです。カード情報はスプレッドシートの v1 / v2 シートに基づきます（合計 196 枚 / SSR+SR のみ表示）。</p>
+    <p class="foot-note">Static demo site. Trait data shown is a placeholder sample. Card list is sourced from the v1 / v2 sheet tabs (196 SSR + SR cards shown).</p>
   </div>
 </footer>
 
@@ -654,27 +652,25 @@ function sampleTraits(card){
 /* ============ STATE ============ */
 let activeRarities = new Set(["SSR","SR"]);
 let party = []; // array of card objects, max 5
-let detailCard = null;
 
 /* ============ INIT: populate filter dropdowns + legend ============ */
 function init(){
   const chars = [...new Set(CARDS.map(c=>c.character))].sort();
   const charSel = document.getElementById('charFilter');
-  charSel.innerHTML = '<option value="">全キャラクター</option>' +
+  charSel.innerHTML = '<option value="">All characters</option>' +
     chars.map(c=>`<option value="${c}">${c}</option>`).join('');
 
   const attrSel = document.getElementById('attrFilter');
-  attrSel.innerHTML = '<option value="">全属性</option>' +
-    Object.entries(ATTR).map(([k,v])=>`<option value="${k}">${v.jp} ${v.name}</option>`).join('');
+  attrSel.innerHTML = '<option value="">All attributes</option>' +
+    Object.entries(ATTR).map(([k,v])=>`<option value="${k}">${v.name} (${v.jp})</option>`).join('');
 
   const legend = document.getElementById('legend');
   legend.innerHTML = Object.entries(ATTR).map(([k,v])=>
-    `<div class="tag"><span class="swatch" style="background:${v.color}"></span>${v.jp} · ${v.name}</div>`
+    `<div class="tag"><span class="swatch" style="background:${v.color}"></span>${v.name} · ${v.jp}</div>`
   ).join('');
 
   renderGrid();
   renderParty();
-  renderDetail();
   renderPoints();
 }
 
@@ -696,12 +692,12 @@ function renderGrid(){
     return true;
   });
 
-  document.getElementById('resultCount').textContent = `${filtered.length} 件`;
+  document.getElementById('resultCount').textContent = `${filtered.length} results`;
 
   if(filtered.length === 0){
     grid.innerHTML = `<div class="empty-state">
       <div class="blob"><div class="eyes"><span></span><span></span></div></div>
-      条件に一致するカードが見つかりませんでした。
+      No cards match these filters.
     </div>`;
     return;
   }
@@ -742,8 +738,7 @@ function handleCardClick(id){
     if(party.length>=5) return;
     party.push(card);
   }
-  detailCard = card;
-  renderGrid(); renderParty(); renderDetail(); renderPoints();
+  renderGrid(); renderParty(); renderPoints();
 }
 
 function removeFromParty(id, ev){
@@ -754,11 +749,10 @@ function removeFromParty(id, ev){
 
 function resetParty(){
   party = [];
-  detailCard = null;
-  renderGrid(); renderParty(); renderDetail(); renderPoints();
+  renderGrid(); renderParty(); renderPoints();
 }
 
-/* ============ RENDER: party slots ============ */
+/* ============ RENDER: party list (traits shown inline per member) ============ */
 function renderParty(){
   const slots = document.getElementById('partySlots');
   let html = '';
@@ -766,47 +760,28 @@ function renderParty(){
     const c = party[i];
     if(c){
       const a = ATTR[c.attr];
-      html += `<div class="slot filled" style="background:${a.color}" onclick='selectDetail(${c.id})'>
-        <div class="blob"><div class="eyes"><span></span><span></span></div></div>
-        <span class="remove" onclick="removeFromParty(${c.id}, event)">✕</span>
-      </div>`;
+      const traits = sampleTraits(c);
+      html += `
+        <div class="party-row filled">
+          <div class="party-row-head">
+            <div class="party-row-icon" style="background:${a.color}">
+              <div class="blob"><div class="eyes"><span></span><span></span></div></div>
+            </div>
+            <div class="party-row-info">
+              <div class="title">${c.en}</div>
+              <div class="meta">${c.character} · ${c.rarity} ${"✧".repeat(c.star)} · ${a.name}</div>
+            </div>
+            <button class="party-row-remove" onclick="removeFromParty(${c.id}, event)">✕</button>
+          </div>
+          <div class="party-row-traits">
+            ${traits.map(t=>`<span class="trait-chip" style="background:${ATTR[t.attr].color}">${t.word}</span>`).join('')}
+          </div>
+        </div>`;
     } else {
-      html += `<div class="slot"></div>`;
+      html += `<div class="party-row empty">Slot ${i+1} — empty</div>`;
     }
   }
   slots.innerHTML = html;
-}
-
-function selectDetail(id){
-  detailCard = CARDS.find(c=>c.id===id);
-  renderDetail();
-}
-
-/* ============ RENDER: detail panel ============ */
-function renderDetail(){
-  const body = document.getElementById('detailBody');
-  if(!detailCard){
-    body.innerHTML = `<div class="detail-empty">カードをクリックすると、ここにタイトル・属性・サンプル特性が表示されます。</div>`;
-    return;
-  }
-  const c = detailCard;
-  const a = ATTR[c.attr];
-  const traits = sampleTraits(c);
-  body.innerHTML = `
-    <div class="detail-card">
-      <div class="badges">
-        <span class="badge">${c.rarity}</span>
-        <span class="badge">${"✧".repeat(c.star)}</span>
-        <span class="badge">${a.jp}</span>
-      </div>
-      <div class="en">${c.en}</div>
-      <div class="jp">${c.jp}</div>
-      <div class="char">${c.character}</div>
-      <div class="trait-chips">
-        ${traits.map(t=>`<span class="trait-chip" style="background:${ATTR[t.attr].color}">${t.word} · Lv${t.level}</span>`).join('')}
-      </div>
-      <div class="trait-note">🔧 特性はサンプルです。実データがないため、Traitsタブの属性×レベル別プールからカードIDを元に自動選出しています。</div>
-    </div>`;
 }
 
 /* ============ RENDER: points ============ */
@@ -816,7 +791,7 @@ function renderPoints(){
 
   if(party.length===0){
     totalEl.textContent = '0';
-    rows.innerHTML = `<div class="points-row"><span>カード未選択</span><span>—</span></div>`;
+    rows.innerHTML = `<div class="points-row"><span>No cards selected</span><span>—</span></div>`;
     return;
   }
 
@@ -829,9 +804,9 @@ function renderPoints(){
 
   totalEl.textContent = total.toLocaleString();
   rows.innerHTML = `
-    <div class="points-row"><span>★合計（枚数×★×250）</span><span>${starPoints.toLocaleString()}</span></div>
-    <div class="points-row"><span>属性シナジー（+300×${synergyPairs}）</span><span>${synergyPoints.toLocaleString()}</span></div>
-    <div class="points-row"><span>選択枚数</span><span>${party.length} / 5</span></div>
+    <div class="points-row"><span>Star total (★ × 250)</span><span>${starPoints.toLocaleString()}</span></div>
+    <div class="points-row"><span>Attribute synergy (+300 × ${synergyPairs})</span><span>${synergyPoints.toLocaleString()}</span></div>
+    <div class="points-row"><span>Cards selected</span><span>${party.length} / 5</span></div>
   `;
 }
 
